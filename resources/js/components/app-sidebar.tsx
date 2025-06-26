@@ -1,41 +1,108 @@
-import { NavMain } from '@/components/nav-main';
-import { NavUser } from '@/components/nav-user';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
-import { LayoutGrid } from 'lucide-react';
-import AppLogo from './app-logo';
+import * as React from "react"
+import {
+    BookOpen,
+    Bot,
+    Command,
+    Frame,
+    LayoutDashboard,
+    Map,
+    PieChart,
+    Settings2,
+    ShieldAlert,
+    SquareTerminal,
+} from "lucide-react"
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: '/dashboard',
-        icon: LayoutGrid,
-    },
-];
+import { NavMain } from "@/components/nav-main"
+import { NavPlatforms } from "@/components/nav-platforms"
+import { NavUser } from "@/components/nav-user"
+import { TeamSwitcher } from "@/components/team-switcher"
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarRail,
+} from "@/components/ui/sidebar"
+import { usePage } from "@inertiajs/react"
+import { SharedData } from "@/types"
 
-export function AppSidebar() {
+const data = {
+    teams: [
+        {
+            name: "Industry Alert App",
+            logo: ShieldAlert,
+            plan: "Raion Engineering Pty Ltd",
+        },
+    ],
+    navMain: [
+        {
+            title: "Manage",
+            url: "#",
+            icon: SquareTerminal,
+            isActive: true,
+            items: [
+                {
+                    title: "Sources",
+                    url: route('sources.index'),
+                },
+                {
+                    title: "Regulations",
+                    url: route('regulations.index'),
+                },
+                {
+                    title: "Organizations",
+                    url: route('organizations.index'),
+                },
+                {
+                    title: "Sites",
+                    url: route('sites.index'),
+                },
+                {
+                    title: "Equipment",
+                    url: route('plant-types.index'),
+                },
+                {
+                    title: "Makes",
+                    url: route('plant-makes.index'),
+                },
+                {
+                    title: "Models",
+                    url: route('plant-models.index'),
+                }
+            ],
+        },
+    ],
+    platforms: [
+        {
+            name: "Dashboard",
+            url: route('dashboard'),
+            icon: LayoutDashboard,
+        },
+        {
+            name: "Alerts",
+            url: route('alerts.index'),
+            icon: ShieldAlert,
+        }
+    ],
+}
+
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+
+    const { auth } = usePage<SharedData>().props;
+    
     return (
-        <Sidebar collapsible="icon" variant="inset">
+        <Sidebar collapsible="icon" {...props}>
             <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href="/dashboard" prefetch>
-                                <AppLogo />
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+                <TeamSwitcher teams={data.teams} />
             </SidebarHeader>
-
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavPlatforms platforms={data.platforms} />
+                <NavMain items={data.navMain} />
             </SidebarContent>
-
             <SidebarFooter>
-                <NavUser />
+                <NavUser user={auth.user} />
             </SidebarFooter>
+            <SidebarRail />
         </Sidebar>
     );
 }
