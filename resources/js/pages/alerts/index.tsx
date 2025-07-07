@@ -14,19 +14,13 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Head } from "@inertiajs/react"
-import { alertColumns, Alert, Source, Organization, Site, PlantType, PlantMake, PlantModel, Regulation } from "../../components/ui/column"
+import { Source, Organization, Site, PlantType, PlantMake, PlantModel, Regulation } from "../../components/ui/column"
 import { DataTable } from "../../components/ui/data-table"
 import CreateAlertDialog from "./create"
 import { Button } from "@/components/ui/button"
 import useFlashMessages from "@/hooks/use-flash-messages"
-
-interface PaginatedAlerts {
-  data: Alert[]
-  current_page: number
-  last_page: number
-  per_page: number
-  total: number
-}
+import { Alert, CreateAlertColumns } from "@/components/ui/column-alerts"
+import { Plus } from "lucide-react"
 
 export default function Index({
   alerts,
@@ -38,7 +32,7 @@ export default function Index({
   plantMakes = [],
   plantModels = [],
 }: {
-  alerts: PaginatedAlerts,
+  alerts: Alert[],
   sources: Source[],
   regulations: Regulation[],
   organizations: Organization[],
@@ -49,12 +43,43 @@ export default function Index({
 }) {
 
   useFlashMessages();
-  // Extract the data array from the paginated response
-  const data: Alert[] = alerts?.data || []
+
+  const alertColumns = CreateAlertColumns(
+    sources,
+    regulations,
+    organizations,
+    sites,
+    plantTypes,
+    plantMakes,
+    plantModels
+  );
+
+  const alertExportColumns = [
+    { header: "Number", accessor: "number" },
+    { header: "Source", accessor: "source.name" },
+    {
+      header: "Incident Date",
+      accessor: "incident_date",
+      cell: (value: string) => new Date(value).toLocaleDateString(),
+    },
+    { header: "Description", accessor: "description" },
+    { header: "Hyperlink", accessor: "hyperlink_url" },
+    {
+      header: "Regulation",
+      accessor: "regulations",
+      cell: (regulations: Regulation[]) => regulations?.map((regulation) => `${regulation.section} - ${regulation.description}`).join("; ") || "No regulations provided",
+    },
+    { header: "Organization", accessor: "organization.name" },
+    { header: "Site", accessor: "site.name" },
+    { header: "Plant Type", accessor: "plant_type.name" },
+    { header: "Plant Make", accessor: "plant_make.name" },
+    { header: "Plant Model", accessor: "plant_model.name" },
+    { header: "Hazards", accessor: "hazards" },
+  ];
 
   return (
     <>
-      <Head title="Dashboard" />
+      <Head title="Alerts" />
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
@@ -81,7 +106,7 @@ export default function Index({
             </div>
           </header>
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <div className="min-h-[100vh] flex-1 rounded-xl md:min-h-min">
+            <div className="min-h-[100vh] flex-1 md:min-h-min">
               <CreateAlertDialog
                 sources={sources}
                 regulations={regulations}
@@ -91,9 +116,20 @@ export default function Index({
                 plantMakes={plantMakes}
                 plantModels={plantModels}
               >
-                <Button className="mb-2">Add new item</Button>
+                <Button className="mt-2">
+                  <Plus />
+                  Add new item
+                </Button>
               </CreateAlertDialog>
-              <DataTable columns={alertColumns} data={data} />
+              <DataTable
+                columns={alertColumns}
+                data={alerts}
+                filterValue1="number"
+                filterValue2="description"
+                exportColumns={alertExportColumns}
+                exportFilename={`${new Date().toLocaleString()}-alerts-export`}
+                exportTitle="Industry Alert Report"
+              />
             </div>
           </div>
         </SidebarInset>

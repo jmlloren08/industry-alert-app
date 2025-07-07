@@ -7,6 +7,7 @@ use App\Models\PlantMake;
 use App\Models\PlantType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class MakeController extends Controller
 {
@@ -16,7 +17,10 @@ class MakeController extends Controller
     public function index()
     {
         try {
-            $plantMakes = PlantMake::with('plantType')->orderBy('name', 'asc')->paginate(10);
+            $plantMakes = PlantMake::with('plantType')
+                ->latest()
+                ->get();
+
             $plantTypes = PlantType::where('is_active', true)->orderBy('name', 'asc')->get();
 
             return inertia('plants/makes/index', [
@@ -50,6 +54,7 @@ class MakeController extends Controller
         try {
 
             $validatedData = $request->validate([
+                'type_id' => 'required|exists:plant_types,id',
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string|max:1000',
                 'is_active' => 'boolean',
@@ -58,6 +63,8 @@ class MakeController extends Controller
             PlantMake::create($validatedData);
 
             return redirect()->route('plant-makes.index')->with('success', 'Plant make created successfully.');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error storing plant make: ' . $e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());
@@ -106,6 +113,7 @@ class MakeController extends Controller
         try {
 
             $validatedData = $request->validate([
+                'type_id' => 'required|exists:plant_types,id',
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string|max:1000',
                 'is_active' => 'boolean',
@@ -114,6 +122,8 @@ class MakeController extends Controller
             $plantMake->update($validatedData);
 
             return redirect()->route('plant-makes.index')->with('success', 'Plant make updated successfully.');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error updating plant make: ' . $e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());

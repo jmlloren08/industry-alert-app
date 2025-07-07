@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Regulation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class RegulationController extends Controller
 {
@@ -14,7 +15,7 @@ class RegulationController extends Controller
     public function index()
     {
         try {
-            $regulations = Regulation::latest()->get();
+            $regulations = Regulation::orderBy('section', 'asc')->get();
 
             return inertia('regulations/index', [
                 'regulations' => $regulations,
@@ -54,6 +55,8 @@ class RegulationController extends Controller
             Regulation::create($validatedData);
 
             return redirect()->route('regulations.index')->with('success', 'Regulation created successfully.');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error storing regulation: ' . $e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());
@@ -67,7 +70,7 @@ class RegulationController extends Controller
     {
         try {
             $regulations = Regulation::findOrFail($id);
-            
+
             return inertia('regulations/show', [
                 'regulations' => $regulations,
             ]);
@@ -110,6 +113,8 @@ class RegulationController extends Controller
             $regulation->update($validatedData);
 
             return redirect()->route('regulations.index')->with('success', 'Regulation updated successfully.');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error updating regulation: ' . $e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());

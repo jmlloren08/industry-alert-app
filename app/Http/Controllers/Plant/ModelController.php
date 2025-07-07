@@ -7,6 +7,7 @@ use App\Models\PlantMake;
 use App\Models\PlantModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class ModelController extends Controller
 {
@@ -16,7 +17,10 @@ class ModelController extends Controller
     public function index()
     {
         try {
-            $plantModels = PlantModel::with('plantMake')->orderBy('name', 'asc')->paginate(10);
+            $plantModels = PlantModel::with('plantMake')
+                ->latest()
+                ->get();
+
             $plantMakes = PlantMake::where('is_active', true)->orderBy('name', 'asc')->get();
 
             return inertia('plants/models/index', [
@@ -50,6 +54,7 @@ class ModelController extends Controller
         try {
 
             $validatedData = $request->validate([
+                'make_id' => 'required|exists:plant_makes,id',
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string|max:1000',
                 'is_active' => 'boolean',
@@ -58,6 +63,8 @@ class ModelController extends Controller
             PlantModel::create($validatedData);
 
             return redirect()->route('plant-models.index')->with('success', 'Plant model created successfully.');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error storing plant model: ' . $e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());
@@ -106,6 +113,7 @@ class ModelController extends Controller
         try {
 
             $validatedData = $request->validate([
+                'make_id' => 'required|exists:plant_makes,id',
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string|max:1000',
                 'is_active' => 'boolean',
@@ -114,6 +122,8 @@ class ModelController extends Controller
             $plantModel->update($validatedData);
 
             return redirect()->route('plant-models.index')->with('success', 'Plant model updated successfully.');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error updating plant model: ' . $e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());

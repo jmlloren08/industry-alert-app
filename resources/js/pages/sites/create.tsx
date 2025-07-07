@@ -69,7 +69,7 @@ export default function CreateOrganizationDialog({ children }: CreateSiteDialogP
                                 id="name"
                                 value={data.name}
                                 onChange={(e) => setData('name', e.target.value)}
-                                placeholder="Enter organization name"
+                                placeholder="Enter site name"
                                 className={errors.name ? "border-red-500" : ""}
                             />
                             {errors.name && (
@@ -82,7 +82,7 @@ export default function CreateOrganizationDialog({ children }: CreateSiteDialogP
                                 id="description"
                                 value={data.description}
                                 onChange={(e) => setData('description', e.target.value)}
-                                placeholder="Enter organization description (optional)"
+                                placeholder="Enter site description (optional)"
                                 className={errors.description ? "border-red-500" : ""}
                             />
                             {errors.description && (

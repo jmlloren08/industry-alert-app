@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Site;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class SiteController extends Controller
 {
@@ -14,7 +15,7 @@ class SiteController extends Controller
     public function index()
     {
         try {
-            $sites = Site::latest()->paginate(10);
+            $sites = Site::latest()->get();
 
             return inertia('sites/index', [
                 'sites' => $sites,
@@ -54,6 +55,8 @@ class SiteController extends Controller
             Site::create($validatedData);
 
             return redirect()->route('sites.index')->with('success', 'Site created successfully.');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error storing site: ' . $e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());
@@ -110,6 +113,8 @@ class SiteController extends Controller
             $site->update($validatedData);
 
             return redirect()->route('sites.index')->with('success', 'Site updated successfully.');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error updating site: ' . $e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());

@@ -23,9 +23,9 @@ class AlertController extends Controller
     {
         try {
 
-            $alerts = Alert::with(['source', 'regulation', 'organization', 'site', 'plantType', 'plantMake', 'plantModel'])
+            $alerts = Alert::with(['source', 'regulations', 'organization', 'site', 'plantType', 'plantMake', 'plantModel'])
                 ->latest()
-                ->paginate(10);
+                ->get();
 
             $sources = Source::where('is_active', true)
                 ->orderBy('name', 'asc')
@@ -96,36 +96,41 @@ class AlertController extends Controller
                 'source_id' => 'required|exists:sources,id',
                 'incident_date' => 'required|date',
                 'description' => 'nullable|string|max:1000',
-                'hyperlink_text' => 'nullable|string|max:255',
                 'hyperlink_url' => 'nullable|url|max:255',
-                'regulation_id' => 'required|exists:regulations,id',
+                'regulation_ids' => 'nullable|array',
+                'regulation_ids.*' => 'uuid|exists:regulations,id',
                 'organization_id' => 'required|exists:organizations,id',
                 'site_id' => 'required|exists:sites,id',
-                'plant_type_id' => 'required|exists:plant_types,id',
-                'plant_make_id' => 'required|exists:plant_makes,id',
-                'plant_model_id' => 'required|exists:plant_models,id',
-                'hazards' => 'required|string|max:1000',
+                'type_id' => 'nullable|exists:plant_types,id',
+                'make_id' => 'nullable|exists:plant_makes,id',
+                'model_id' => 'nullable|exists:plant_models,id',
+                'hazards' => 'nullable|string|max:1000',
             ]);
 
-            Alert::create($validatedData);
+            $regulationIds = $validatedData['regulation_ids'] ?? [];
+            unset($validatedData['regulation_ids']);
+
+            $alert = Alert::create($validatedData);
+
+            if (!empty($regulationIds)) {
+                $alert->regulations()->attach($regulationIds);
+            }
 
             return redirect()->route('alerts.index')->with('success', 'Alert created successfully.');
         } catch (ValidationException $e) {
-            return redirect()->back()->withErrors($e->validator)->withInput();
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error storing alert: ' . $e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());
         }
     }
-
     /**
      * Display the specified resource.
      */
     public function show($id)
     {
         try {
-            $alerts = Alert::with(['source', 'regulation', 'organization', 'site', 'plantType', 'plantMake', 'plantModel'])
-                ->findOrFail($id);
+            $alerts = Alert::findOrFail($id);
 
             return inertia('alerts/show', [
                 'alerts' => $alerts,
@@ -142,18 +147,10 @@ class AlertController extends Controller
     public function edit($id)
     {
         try {
-            $alert = Alert::with(['source', 'regulation', 'organization', 'site', 'plantType', 'plantMake', 'plantModel'])
-                ->findOrFail($id);
+            $alert = Alert::findOrFail($id);
 
             return inertia('alerts/edit', [
                 'alert' => $alert,
-                'sources' => Source::where('is_active', true)->orderBy('name', 'asc')->get(),
-                'regulations' => Regulation::where('is_active', true)->orderBy('name', 'asc')->get(),
-                'organizations' => Organization::where('is_active', true)->orderBy('name', 'asc')->get(),
-                'sites' => Site::where('is_active', true)->orderBy('name', 'asc')->get(),
-                'plantTypes' => PlantType::where('is_active', true)->orderBy('name', 'asc')->get(),
-                'plantMakes' => PlantMake::where('is_active', true)->orderBy('name', 'asc')->get(),
-                'plantModels' => PlantModel::where('is_active', true)->orderBy('name', 'asc')->get(),
             ]);
         } catch (\Exception $e) {
             Log::error('Error showing edit form: ' . $e->getMessage());
@@ -173,22 +170,27 @@ class AlertController extends Controller
                 'source_id' => 'required|exists:sources,id',
                 'incident_date' => 'required|date',
                 'description' => 'nullable|string|max:1000',
-                'hyperlink_text' => 'nullable|string|max:255',
                 'hyperlink_url' => 'nullable|url|max:255',
-                'regulation_id' => 'required|exists:regulations,id',
+                'regulation_ids' => 'nullable|array',
+                'regulation_ids.*' => 'uuid|exists:regulations,id',
                 'organization_id' => 'required|exists:organizations,id',
                 'site_id' => 'required|exists:sites,id',
-                'plant_type_id' => 'required|exists:plant_types,id',
-                'plant_make_id' => 'required|exists:plant_makes,id',
-                'plant_model_id' => 'required|exists:plant_models,id',
-                'hazards' => 'required|string|max:1000',
+                'type_id' => 'nullable|exists:plant_types,id',
+                'make_id' => 'nullable|exists:plant_makes,id',
+                'model_id' => 'nullable|exists:plant_models,id',
+                'hazards' => 'nullable|string|max:1000',
             ]);
+
+            $regulationIds = $validatedData['regulation_ids'] ?? [];
+            unset($validatedData['regulation_ids']);
 
             $alert->update($validatedData);
 
+            $alert->regulations()->sync($regulationIds);
+
             return redirect()->route('alerts.index')->with('success', 'Alert updated successfully.');
         } catch (ValidationException $e) {
-            return redirect()->back()->withErrors($e->validator)->withInput();
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error updating alert: ' . $e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());

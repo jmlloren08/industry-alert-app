@@ -1,13 +1,6 @@
 import * as React from "react"
 import {
-    BookOpen,
-    Bot,
-    Command,
-    Frame,
     LayoutDashboard,
-    Map,
-    PieChart,
-    Settings2,
     ShieldAlert,
     SquareTerminal,
 } from "lucide-react"
@@ -58,7 +51,7 @@ const data = {
                     url: route('sites.index'),
                 },
                 {
-                    title: "Equipment",
+                    title: "Types",
                     url: route('plant-types.index'),
                 },
                 {

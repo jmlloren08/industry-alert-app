@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PlantType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class TypeController extends Controller
 {
@@ -15,7 +16,7 @@ class TypeController extends Controller
     public function index()
     {
         try {
-            $plantTypes = PlantType::latest()->paginate(10);
+            $plantTypes = PlantType::latest()->get();
 
             return inertia('plants/types/index', [
                 'plantTypes' => $plantTypes,
@@ -55,6 +56,8 @@ class TypeController extends Controller
             PlantType::create($validatedData);
 
             return redirect()->route('plant-types.index')->with('success', 'Plant type created successfully.');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error storing plant type: ' . $e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());
@@ -113,6 +116,8 @@ class TypeController extends Controller
             $plantType->update($validatedData);
 
             return redirect()->route('plant-types.index')->with('success', 'Plant type updated successfully.');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error updating plant type: ' . $e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());

@@ -25,9 +25,6 @@ class PlantMake extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
-        'created_at' => 'timestamp',
-        'updated_at' => 'timestamp',
-        'deleted_at' => 'timestamp',
     ];
 
     public function plantType()

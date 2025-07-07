@@ -19,24 +19,15 @@ import { PlantType, plantTypeColumns } from "@/components/ui/column"
 import { DataTable } from "@/components/ui/data-table"
 import CreateTypeDialog from "./create"
 import useFlashMessages from "@/hooks/use-flash-messages"
+import { Plus } from "lucide-react"
 
-interface PaginatedTypes {
-    data: PlantType[]
-    current_page: number
-    last_page: number
-    per_page: number
-    total: number
-}
-
-export default function Index({ plantTypes }: { plantTypes: PaginatedTypes }) {
+export default function Index({ plantTypes }: { plantTypes: PlantType[] }) {
 
     useFlashMessages();
-    // Extract the data array from the paginated response
-    const data: PlantType[] = plantTypes?.data || []
 
     return (
         <>
-            <Head title="Dashboard" />
+            <Head title="Plant Types" />
             <SidebarProvider>
                 <AppSidebar />
                 <SidebarInset>
@@ -63,11 +54,19 @@ export default function Index({ plantTypes }: { plantTypes: PaginatedTypes }) {
                         </div>
                     </header>
                     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-                        <div className="min-h-[100vh] flex-1 rounded-xl md:min-h-min">
+                        <div className="min-h-[100vh] flex-1 md:min-h-min">
                             <CreateTypeDialog>
-                                <Button className="mb-2">Add new item</Button>
+                                <Button className="mt-2">
+                                    <Plus />
+                                    Add new item
+                                </Button>
                             </CreateTypeDialog>
-                            <DataTable columns={plantTypeColumns} data={data} />
+                            <DataTable
+                                columns={plantTypeColumns}
+                                data={plantTypes}
+                                filterValue1="name"
+                                filterValue2="description"
+                            />
                         </div>
                     </div>
                 </SidebarInset>

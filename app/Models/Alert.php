@@ -15,7 +15,7 @@ class Alert extends Model
     protected $primaryKey = 'id';
     protected $keyType = 'string';
     public $incrementing = false;
-    
+
     protected $fillable = [
         'number',
         'source_id',
@@ -23,19 +23,12 @@ class Alert extends Model
         'description',
         'hyperlink_text',
         'hyperlink_url',
-        'reg_id',
         'organization_id',
         'site_id',
-        'plant_type_id',
-        'plant_make_id',
-        'plant_model_id',
+        'type_id',
+        'make_id',
+        'model_id',
         'hazards',
-    ];
-
-    protected $casts = [
-        'created_at' => 'timestamp',
-        'updated_at' => 'timestamp',
-        'deleted_at' => 'timestamp',
     ];
 
     public function source()
@@ -43,9 +36,9 @@ class Alert extends Model
         return $this->belongsTo(Source::class, 'source_id');
     }
 
-    public function reg()
+    public function regulations()
     {
-        return $this->belongsTo(Reg::class, 'reg_id');
+        return $this->belongsToMany(Regulation::class, 'alerts_regulations', 'alert_id', 'regulation_id');
     }
 
     public function organization()
@@ -60,16 +53,16 @@ class Alert extends Model
 
     public function plantType()
     {
-        return $this->belongsTo(PlantType::class, 'plant_type_id');
+        return $this->belongsTo(PlantType::class, 'type_id');
     }
 
     public function plantMake()
     {
-        return $this->belongsTo(PlantMake::class, 'plant_make_id');
+        return $this->belongsTo(PlantMake::class, 'make_id');
     }
-    
+
     public function plantModel()
     {
-        return $this->belongsTo(PlantModel::class, 'plant_model_id');
+        return $this->belongsTo(PlantModel::class, 'model_id');
     }
 }

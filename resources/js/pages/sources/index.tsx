@@ -19,24 +19,15 @@ import { DataTable } from "../../components/ui/data-table"
 import { Button } from "@/components/ui/button"
 import CreateSourceDialog from "./create"
 import useFlashMessages from "@/hooks/use-flash-messages"
+import { Plus } from "lucide-react"
 
-interface PaginatedSources {
-    data: Source[]
-    current_page: number
-    last_page: number
-    per_page: number
-    total: number
-}
-
-export default function Index({ sources }: { sources: PaginatedSources }) {
+export default function Index({ sources }: { sources: Source[] }) {
 
     useFlashMessages();
-    // Extract the data array from the paginated response
-    const data: Source[] = sources?.data || []
 
     return (
         <>
-            <Head title="Dashboard" />
+            <Head title="Sources" />
             <SidebarProvider>
                 <AppSidebar />
                 <SidebarInset>
@@ -63,13 +54,16 @@ export default function Index({ sources }: { sources: PaginatedSources }) {
                         </div>
                     </header>
                     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-                        <div className="min-h-[100vh] flex-1 rounded-xl md:min-h-min">
+                        <div className="min-h-[100vh] flex-1 md:min-h-min">
                             <CreateSourceDialog>
-                                <Button className="mb-2">Add new item</Button>
+                                <Button className="mt-2">
+                                    <Plus />
+                                    Add new item
+                                </Button>
                             </CreateSourceDialog>
                             <DataTable
                                 columns={sourceColumns}
-                                data={data}
+                                data={sources}
                                 filterValue1="name"
                                 filterValue2="description"
                             />

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Source;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class SourceController extends Controller
 {
@@ -14,7 +15,7 @@ class SourceController extends Controller
     public function index()
     {
         try {
-            $sources = Source::orderBy('name', 'asc')->paginate(10);
+            $sources = Source::latest()->get();
 
             return inertia('sources/index', [
                 'sources' => $sources,
@@ -54,6 +55,8 @@ class SourceController extends Controller
             Source::create($validatedData);
 
             return redirect()->route('sources.index')->with('success', 'Source created successfully.');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error storing source: ' . $e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());
@@ -110,6 +113,8 @@ class SourceController extends Controller
             $source->update($validatedData);
 
             return redirect()->route('sources.index')->with('success', 'Source updated successfully.');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error updating source: ' . $e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());

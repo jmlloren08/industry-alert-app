@@ -19,24 +19,15 @@ import { DataTable } from "../../components/ui/data-table"
 import { Button } from "@/components/ui/button"
 import CreateOrganizationDialog from "./create"
 import useFlashMessages from "@/hooks/use-flash-messages"
+import { Plus } from "lucide-react"
 
-interface PaginatedOrganizations {
-    data: Organization[]
-    current_page: number
-    last_page: number
-    per_page: number
-    total: number
-}
+export default function Index({ organizations }: { organizations: Organization[] }) {
 
-export default function Index({ organizations }: { organizations: PaginatedOrganizations }) {
-    
     useFlashMessages();
-    // Extract the data array from the paginated response
-    const data: Organization[] = organizations?.data || []
 
     return (
         <>
-            <Head title="Dashboard" />
+            <Head title="Organizations" />
             <SidebarProvider>
                 <AppSidebar />
                 <SidebarInset>
@@ -63,11 +54,19 @@ export default function Index({ organizations }: { organizations: PaginatedOrgan
                         </div>
                     </header>
                     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-                        <div className="min-h-[100vh] flex-1 rounded-xl md:min-h-min">
+                        <div className="min-h-[100vh] flex-1 md:min-h-min">
                             <CreateOrganizationDialog>
-                                <Button className="mb-2">Add new item</Button>
+                                <Button className="mt-2">
+                                    <Plus />
+                                    Add new item
+                                </Button>
                             </CreateOrganizationDialog>
-                            <DataTable columns={organizationColumns} data={data} />
+                            <DataTable
+                                columns={organizationColumns}
+                                data={organizations}
+                                filterValue1="name"
+                                filterValue2="description"
+                            />
                         </div>
                     </div>
                 </SidebarInset>

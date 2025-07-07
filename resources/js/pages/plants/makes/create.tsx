@@ -14,8 +14,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PlantType } from "@/components/ui/column"
+import { ComboBoxList } from "@/components/ui/combo-box"
 
 interface CreateMakeDialogProps {
     children: React.ReactNode
@@ -30,7 +30,7 @@ export default function CreateMakeDialog({
     const [open, setOpen] = useState(false);
 
     const { data, setData, post, processing, errors, reset } = useForm({
-        plant_type_id: "",
+        type_id: "",
         name: "",
         description: "",
         is_active: true as boolean,
@@ -54,8 +54,15 @@ export default function CreateMakeDialog({
         }
     }
 
+    const plantTypesOptions = plantTypes.map((type) => ({
+        value: type.id,
+        label: type.name,
+        description: type.description,
+        disabled: !type.is_active,
+    })) || [];
+
     return (
-        <Dialog open={open} onOpenChange={handleOpenChange}>
+        <Dialog open={open} onOpenChange={handleOpenChange} modal={false}>
             <DialogTrigger asChild>
                 {children}
             </DialogTrigger>
@@ -70,26 +77,31 @@ export default function CreateMakeDialog({
                     <div className="grid gap-4 py-4">
                         {/* Plant Type Dropdown */}
                         <div className="grid gap-2">
-                            <Label htmlFor="plant_type_id">
+                            <Label htmlFor="type_id">
                                 Plant Type <span className="text-red-500">*</span>
                             </Label>
-                            <Select
-                                value={data.plant_type_id}
-                                onValueChange={(value) => setData('plant_type_id', value)}
-                            >
-                                <SelectTrigger className={errors.plant_type_id ? "border-red-500" : ""}>
-                                    <SelectValue placeholder="Select plant type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {plantTypes?.filter(type => type.is_active).map((type) => (
-                                        <SelectItem key={type.id} value={type.id}>
-                                            {type.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.plant_type_id && (
-                                <p className="text-sm text-red-500">{errors.plant_type_id}</p>
+                            <ComboBoxList
+                                data={plantTypesOptions}
+                                value={data.type_id}
+                                onValueChange={(value) => setData('type_id', value)}
+                                placeholder="Select a plant type..."
+                                searchPlaceholder="Search plant types..."
+                                emptyMessage="No plant types found."
+                                error={!!errors.type_id}
+                                displayField="label"
+                                width="w-full"
+                            />
+                            {data.type_id && (
+                                <Input
+                                    type="text"
+                                    value={plantTypesOptions.find((option) => option.value === data.type_id)?.description || ""}
+                                    readOnly
+                                    className="bg-gray-100"
+                                    title={plantTypesOptions.find((option) => option.value === data.type_id)?.description || "No description available"}
+                                />
+                            )}
+                            {errors.type_id && (
+                                <p className="text-sm text-red-500">{errors.type_id}</p>
                             )}
                         </div>
                         {/* Make Name */}
@@ -101,9 +113,9 @@ export default function CreateMakeDialog({
                                 id="name"
                                 value={data.name}
                                 onChange={(e) => setData('name', e.target.value)}
-                                placeholder={!data.plant_type_id ? "Select a plant type first" : "Enter make name"}
+                                placeholder={!data.type_id ? "Select a plant type first" : "Enter make name"}
                                 className={errors.name ? "border-red-500" : ""}
-                                disabled={!data.plant_type_id}
+                                disabled={!data.type_id}
                             />
                             {errors.name && (
                                 <p className="text-sm text-red-500">{errors.name}</p>
@@ -156,6 +168,6 @@ export default function CreateMakeDialog({
                     </DialogFooter>
                 </form>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

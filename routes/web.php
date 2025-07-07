@@ -26,29 +26,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 
-    Route::resource('/auth/verified/alerts', AlertController::class)
-        ->except(['destroy']);
-
-    Route::resource('/auth/verified/sources', SourceController::class)
-        ->except(['destroy']);
-
-    Route::resource('/auth/verified/regulations', RegulationController::class)
-        ->except(['destroy']);
-
-    Route::resource('/auth/verified/organizations', OrganizationController::class)
-        ->except(['destroy']);
-
-    Route::resource('/auth/verified/sites', SiteController::class)
-        ->except(['destroy']);
-
-    Route::resource('/auth/verified/plant-types', TypeController::class)
-        ->except(['destroy']);
-
-    Route::resource('/auth/verified/plant-makes', MakeController::class)
-        ->except(['destroy']);
-
-    Route::resource('/auth/verified/plant-models', ModelController::class)
-        ->except(['destroy']);
+    Route::resource('/auth/verified/alerts', AlertController::class);
+    Route::resource('/auth/verified/sources', SourceController::class);
+    Route::resource('/auth/verified/regulations', RegulationController::class);
+    Route::resource('/auth/verified/organizations', OrganizationController::class);
+    Route::resource('/auth/verified/sites', SiteController::class);
+    Route::resource('/auth/verified/plant-types', TypeController::class);
+    Route::resource('/auth/verified/plant-makes', MakeController::class);
+    Route::resource('/auth/verified/plant-models', ModelController::class);
 });
 
 // Fallback route for Inertia

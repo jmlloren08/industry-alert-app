@@ -15,28 +15,27 @@ import {
 } from "@/components/ui/sidebar"
 import { Head } from "@inertiajs/react"
 import { Button } from "@/components/ui/button"
-import { PlantModel, plantModelColumns } from "@/components/ui/column"
+import { createPlantModelColumns, PlantMake, PlantModel } from "@/components/ui/column"
 import { DataTable } from "@/components/ui/data-table"
 import CreateModelDialog from "./create"
 import useFlashMessages from "@/hooks/use-flash-messages"
+import { Plus } from "lucide-react"
 
-interface PaginatedModels {
-    data: PlantModel[]
-    current_page: number
-    last_page: number
-    per_page: number
-    total: number
-}
-
-export default function Index({ plantModels }: { plantModels: PaginatedModels }) {
+export default function Index({
+    plantModels,
+    plantMakes,
+}: {
+    plantModels: PlantModel[],
+    plantMakes: PlantMake[],
+}) {
 
     useFlashMessages();
-    // Extract the data array from the paginated response
-    const data: PlantModel[] = plantModels?.data || []
+
+    const plantModelColumns = createPlantModelColumns(plantMakes);
 
     return (
         <>
-            <Head title="Dashboard" />
+            <Head title="Plant Models" />
             <SidebarProvider>
                 <AppSidebar />
                 <SidebarInset>
@@ -63,11 +62,21 @@ export default function Index({ plantModels }: { plantModels: PaginatedModels })
                         </div>
                     </header>
                     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-                        <div className="min-h-[100vh] flex-1 rounded-xl md:min-h-min">
-                            <CreateModelDialog>
-                                <Button className="mb-2">Add new item</Button>
+                        <div className="min-h-[100vh] flex-1 md:min-h-min">
+                            <CreateModelDialog
+                                plantMakes={plantMakes}
+                            >
+                                <Button className="mt-2">
+                                    <Plus />
+                                    Add new item
+                                </Button>
                             </CreateModelDialog>
-                            <DataTable columns={plantModelColumns} data={data} />
+                            <DataTable
+                                columns={plantModelColumns}
+                                data={plantModels}
+                                filterValue1="name"
+                                filterValue2="description"
+                            />
                         </div>
                     </div>
                 </SidebarInset>

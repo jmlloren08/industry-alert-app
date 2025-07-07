@@ -1,38 +1,7 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "./button"
 import { ArrowUpDown } from "lucide-react"
-
-export type Alert = {
-    id: string
-    number: string
-    source?: {
-        name: string
-    }
-    incident_date: string
-    description: string
-    hyperlink_text?: string
-    hyperlink_url?: string
-    regulation?: {
-        section: string
-        description: string
-    }
-    organization?: {
-        name: string
-    }
-    site?: {
-        name: string
-    }
-    plant_type?: {
-        name: string
-    }
-    plant_make?: {
-        name: string
-    }
-    plant_model?: {
-        name: string
-    }
-    hazards?: string
-}
+import ColumnActions from "../actions/column-actions"
 
 export type Source = {
     id: string
@@ -48,8 +17,8 @@ export type Regulation = {
     section: string
     description?: string
     is_active: boolean
-    created_at: string
-    updated_at: string
+    created_at: Date
+    updated_at: Date
 }
 
 export type Organization = {
@@ -80,8 +49,9 @@ export type PlantType = {
 }
 
 export type PlantMake = {
+    type_id: string
     id: string
-    plant_type_id: string
+    plant_type: PlantType
     name: string
     description?: string
     is_active: boolean
@@ -90,117 +60,15 @@ export type PlantMake = {
 }
 
 export type PlantModel = {
+    make_id: string
     id: string
-    plant_make_id: string
+    plant_make: PlantMake
     name: string
     description?: string
     is_active: boolean
     created_at: string
     updated_at: string
 }
-
-export const alertColumns: ColumnDef<Alert>[] = [
-    {
-        accessorKey: "number",
-        header: "Number",
-    },
-    {
-        accessorKey: "source.name",
-        header: "Source",
-        cell: ({ row }) => {
-            return row.original.source?.name || "N/A"
-        },
-    },
-    {
-        accessorKey: "incident_date",
-        header: "Incident Date",
-        cell: ({ row }) => {
-            return new Date(row.original.incident_date).toLocaleDateString()
-        },
-    },
-    {
-        accessorKey: "description",
-        header: "Description",
-        cell: ({ row }) => {
-            return (
-                <div className="max-w-[300px] truncate">
-                    {row.original.description}
-                </div>
-            )
-        },
-    },
-    {
-        accessorKey: "hyperlink_text",
-        header: "Hyperlink Text",
-    },
-    {
-        accessorKey: "hyperlink_url",
-        header: "Hyperlink URL",
-        cell: ({ row }) => {
-            return row.original.hyperlink_url || "N/A"
-        },
-    },
-    {
-        accessorKey: "regulation.section",
-        header: "Reg Section",
-        cell: ({ row }) => {
-            return row.original.regulation?.section || "N/A"
-        },
-    },
-    {
-        accessorKey: "regulation.description",
-        header: "Reg Description",
-        cell: ({ row }) => {
-            return row.original.regulation?.description || "N/A"
-        },
-    },
-    {
-        accessorKey: "organization.name",
-        header: "Organization",
-        cell: ({ row }) => {
-            return row.original.organization?.name || "N/A"
-        },
-    },
-    {
-        accessorKey: "site.name",
-        header: "Site",
-        cell: ({ row }) => {
-            return row.original.site?.name || "N/A"
-        },
-    },
-    {
-        accessorKey: "plant_type.name",
-        header: "Plant Type",
-        cell: ({ row }) => {
-            return row.original.plant_type?.name || "N/A"
-        },
-    },
-    {
-        accessorKey: "plant_make.name",
-        header: "Plant Make",
-        cell: ({ row }) => {
-            return row.original.plant_make?.name || "N/A"
-        },
-    },
-    {
-        accessorKey: "plant_model.name",
-        header: "Plant Model",
-        cell: ({ row }) => {
-            return row.original.plant_model?.name || "N/A"
-        },
-    },
-    {
-        accessorKey: "hazards",
-        header: "Hazards",
-        cell: ({ row }) => {
-            return (
-                <div className="max-w-[200px] truncate">
-                    {row.original.hazards || "N/A"}
-                </div>
-            )
-        },
-    },
-];
 
 export const sourceColumns: ColumnDef<Source>[] = [
     {
@@ -232,6 +100,21 @@ export const sourceColumns: ColumnDef<Source>[] = [
             )
         },
     },
+    {
+        id: "actions",
+        cell: ({ row }) => {
+            const source = row.original;
+            return (
+                <ColumnActions
+                    data={source}
+                    editUrl="sources.update"
+                    deleteUrl="sources.destroy"
+                    dialogTitle="Source"
+                    dialogDescription="source"
+                />
+            );
+        },
+    },
 ];
 
 export const regulationColumns: ColumnDef<Regulation>[] = [
@@ -258,7 +141,7 @@ export const regulationColumns: ColumnDef<Regulation>[] = [
         cell: ({ row }) => {
             return (
                 <div
-                    className="max-w-[300px] truncate"
+                    className="max-w-[700px] truncate"
                     title={row.original.description}
                 >
                     {row.original.description}
@@ -277,6 +160,21 @@ export const regulationColumns: ColumnDef<Regulation>[] = [
             )
         },
     },
+    {
+        id: "actions",
+        cell: ({ row }) => {
+            const regulation = row.original;
+            return (
+                <ColumnActions
+                    data={regulation}
+                    editUrl="regulations.update"
+                    deleteUrl="regulations.destroy"
+                    dialogTitle="Regulation"
+                    dialogDescription="regulation"
+                />
+            );
+        },
+    },
 ];
 
 export const organizationColumns: ColumnDef<Organization>[] = [
@@ -289,7 +187,10 @@ export const organizationColumns: ColumnDef<Organization>[] = [
         header: "Description",
         cell: ({ row }) => {
             return (
-                <div className="max-w-[300px] truncate">
+                <div
+                    className="max-w-[700px] truncate"
+                    title={row.original.description}
+                >
                     {row.original.description}
                 </div>
             )
@@ -304,6 +205,21 @@ export const organizationColumns: ColumnDef<Organization>[] = [
             ) : (
                 <span className="px-2 py-0.5 bg-red-100 border-red-500 rounded-full text-red-500">No</span>
             )
+        },
+    },
+    {
+        id: "actions",
+        cell: ({ row }) => {
+            const organization = row.original;
+            return (
+                <ColumnActions
+                    data={organization}
+                    editUrl="organizations.update"
+                    deleteUrl="organizations.destroy"
+                    dialogTitle="Organization"
+                    dialogDescription="organization"
+                />
+            );
         },
     },
 ];
@@ -318,7 +234,10 @@ export const siteColumns: ColumnDef<Site>[] = [
         header: "Description",
         cell: ({ row }) => {
             return (
-                <div className="max-w-[300px] truncate">
+                <div
+                    className="max-w-[700px] truncate"
+                    title={row.original.description}
+                >
                     {row.original.description}
                 </div>
             )
@@ -333,6 +252,21 @@ export const siteColumns: ColumnDef<Site>[] = [
             ) : (
                 <span className="px-2 py-0.5 bg-red-100 border-red-500 rounded-full text-red-500">No</span>
             )
+        },
+    },
+    {
+        id: "actions",
+        cell: ({ row }) => {
+            const site = row.original;
+            return (
+                <ColumnActions
+                    data={site}
+                    editUrl="sites.update"
+                    deleteUrl="sites.destroy"
+                    dialogTitle="Site"
+                    dialogDescription="site"
+                />
+            );
         },
     },
 ];
@@ -340,14 +274,17 @@ export const siteColumns: ColumnDef<Site>[] = [
 export const plantTypeColumns: ColumnDef<PlantType>[] = [
     {
         accessorKey: "name",
-        header: "Name",
+        header: "Type",
     },
     {
         accessorKey: "description",
         header: "Description",
         cell: ({ row }) => {
             return (
-                <div className="max-w-[300px] truncate">
+                <div
+                    className="max-w-[700px] truncate"
+                    title={row.original.description}
+                >
                     {row.original.description}
                 </div>
             )
@@ -362,21 +299,46 @@ export const plantTypeColumns: ColumnDef<PlantType>[] = [
             ) : (
                 <span className="px-2 py-0.5 bg-red-100 border-red-500 rounded-full text-red-500">No</span>
             )
+        },
+    },
+    {
+        id: "actions",
+        cell: ({ row }) => {
+            const plantType = row.original;
+            return (
+                <ColumnActions
+                    data={plantType}
+                    editUrl="plant-types.update"
+                    deleteUrl="plant-types.destroy"
+                    dialogTitle="Plant Type"
+                    dialogDescription="plant type"
+                />
+            );
         },
     },
 ];
 
-export const plantMakeColumns: ColumnDef<PlantMake>[] = [
+export const createPlantMakeColumns = (plantTypes: PlantType[] = []): ColumnDef<PlantMake>[] => [
+    {
+        accessorKey: "plant_type.name",
+        header: "Type",
+        cell: ({ row }) => {
+            return row.original.plant_type?.name || "N/A"
+        },
+    },
     {
         accessorKey: "name",
-        header: "Name",
+        header: "Make",
     },
     {
         accessorKey: "description",
         header: "Description",
         cell: ({ row }) => {
             return (
-                <div className="max-w-[300px] truncate">
+                <div
+                    className="max-w-[700px] truncate"
+                    title={row.original.description}
+                >
                     {row.original.description}
                 </div>
             )
@@ -391,21 +353,47 @@ export const plantMakeColumns: ColumnDef<PlantMake>[] = [
             ) : (
                 <span className="px-2 py-0.5 bg-red-100 border-red-500 rounded-full text-red-500">No</span>
             )
+        },
+    },
+    {
+        id: "actions",
+        cell: ({ row }) => {
+            const plantMake = row.original;
+            return (
+                <ColumnActions
+                    data={plantMake}
+                    editUrl="plant-makes.update"
+                    deleteUrl="plant-makes.destroy"
+                    dialogTitle="Plant Make"
+                    dialogDescription="plant make"
+                    plantTypes={plantTypes}
+                />
+            );
         },
     },
 ];
 
-export const plantModelColumns: ColumnDef<PlantModel>[] = [
+export const createPlantModelColumns = (plantMakes: PlantMake[] = []): ColumnDef<PlantModel>[] => [
+    {
+        accessorKey: "plant_make.name",
+        header: "Make",
+        cell: ({ row }) => {
+            return row.original.plant_make?.name || "N/A"
+        },
+    },
     {
         accessorKey: "name",
-        header: "Name",
+        header: "Model",
     },
     {
         accessorKey: "description",
         header: "Description",
         cell: ({ row }) => {
             return (
-                <div className="max-w-[300px] truncate">
+                <div
+                    className="max-w-[700px] truncate"
+                    title={row.original.description}
+                >
                     {row.original.description}
                 </div>
             )
@@ -420,6 +408,22 @@ export const plantModelColumns: ColumnDef<PlantModel>[] = [
             ) : (
                 <span className="px-2 py-0.5 bg-red-100 border-red-500 rounded-full text-red-500">No</span>
             )
+        },
+    },
+    {
+        id: "actions",
+        cell: ({ row }) => {
+            const plantModel = row.original;
+            return (
+                <ColumnActions
+                    data={plantModel}
+                    editUrl="plant-models.update"
+                    deleteUrl="plant-models.destroy"
+                    dialogTitle="Plant Model"
+                    dialogDescription="plant model"
+                    plantMakes={plantMakes}
+                />
+            );
         },
     },
 ];

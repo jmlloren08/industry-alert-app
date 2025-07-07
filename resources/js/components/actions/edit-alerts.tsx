@@ -1,33 +1,37 @@
+import { router, useForm } from "@inertiajs/react"
+import { Alert } from "../ui/column-alerts";
 import React, { useEffect, useState } from "react";
-import { useForm } from "@inertiajs/react";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Organization, PlantMake, PlantModel, PlantType, Regulation, Site, Source } from "@/components/ui/column";
+import { Organization, PlantMake, PlantModel, PlantType, Regulation, Site, Source } from "../ui/column";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
+import { Label } from "../ui/label";
+import { Input } from "../ui/input";
 import Select from 'react-select';
+import { Textarea } from "../ui/textarea";
+import { Button } from "../ui/button";
 
-interface CreateAlertDialogProps {
-    children: React.ReactNode,
-    sources?: Source[],
-    regulations?: Regulation[],
-    organizations?: Organization[],
-    sites?: Site[],
-    plantTypes?: PlantType[],
-    plantMakes?: PlantMake[],
-    plantModels?: PlantModel[],
+interface EditAlertsDialogProps {
+    editUrl: string
+    editData: any
+    editTitle: string
+    editDescription: string
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    sources?: Source[]
+    regulations?: Regulation[]
+    organizations?: Organization[]
+    sites?: Site[]
+    plantTypes?: PlantType[]
+    plantMakes?: PlantMake[]
+    plantModels?: PlantModel[]
 }
-export default function CreateAlertDialog({
-    children,
+
+export default function EditAlertsDialog({
+    editUrl,
+    editData,
+    editTitle,
+    editDescription,
+    open,
+    onOpenChange,
     sources = [],
     regulations = [],
     organizations = [],
@@ -35,13 +39,12 @@ export default function CreateAlertDialog({
     plantTypes = [],
     plantMakes = [],
     plantModels = [],
-}: CreateAlertDialogProps) {
+}: EditAlertsDialogProps) {
 
-    const [open, setOpen] = useState(false);
     const [availablePlantMakes, setAvailablePlantMakes] = useState<PlantMake[]>([]);
     const [availablePlantModels, setAvailablePlantModels] = useState<PlantModel[]>([]);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, put, processing, errors, reset } = useForm({
         number: "",
         source_id: "",
         incident_date: "",
@@ -55,6 +58,58 @@ export default function CreateAlertDialog({
         model_id: "",
         hazards: "",
     });
+
+    useEffect(() => {
+        if (open && editData) {
+
+            const regulationIds = editData.regulations?.map((regulation: Regulation) => regulation.id) || [];
+
+            setData({
+                number: editData.number || "",
+                source_id: editData.source?.id || "",
+                incident_date: editData.incident_date || "",
+                description: editData.description || "",
+                hyperlink_url: editData.hyperlink_url || "",
+                regulation_ids: regulationIds,
+                organization_id: editData.organization?.id || "",
+                site_id: editData.site?.id || "",
+                type_id: editData.plant_type?.id || "",
+                make_id: editData.plant_make?.id || "",
+                model_id: editData.plant_model?.id || "",
+                hazards: editData.hazards || "",
+            });
+        }
+    }, [open, editData]);
+
+    useEffect(() => {
+        if (data.type_id) {
+            const filterMakes = plantMakes.filter((make) => make.type_id === data.type_id);
+            setAvailablePlantMakes(filterMakes);
+            // Only reset make and model if they're not compatible with the current type
+            const currentMakeValid = filterMakes.some((make) => make.id === data.make_id);
+            if (!currentMakeValid) {
+                setData((prev) => ({ ...prev, make_id: "", model_id: "" }));
+                setAvailablePlantModels([]);
+            }
+        } else {
+            setAvailablePlantMakes([]);
+            setAvailablePlantModels([]);
+        }
+    }, [data.type_id]);
+
+    useEffect(() => {
+        if (data.make_id) {
+            const filteredModels = plantModels.filter((model) => model.make_id === data.make_id);
+            setAvailablePlantModels(filteredModels);
+            // Only reset model if it's not compatible with the current make
+            const currentModelValid = filteredModels.some((model) => model.id === data.model_id);
+            if (!currentModelValid) {
+                setData((prev) => ({ ...prev, model_id: "" }));
+            }
+        } else {
+            setAvailablePlantModels([]);
+        }
+    }, [data.make_id]);
 
     const sourceOptions = sources.map((source) => ({
         value: source.id,
@@ -94,43 +149,23 @@ export default function CreateAlertDialog({
         description: plantModel.description,
     })) || [];
 
-    useEffect(() => {
-        if (data.type_id) {
-            const filteredMakes = plantMakes.filter((make) => make.type_id === data.type_id);
-            setAvailablePlantMakes(filteredMakes);
-            setData((prev) => ({ ...prev, make_id: "", model_id: "" }));
-            setAvailablePlantModels([]);
-        } else {
-            setAvailablePlantMakes([]);
-            setAvailablePlantModels([]);
-        }
-    }, [data.type_id]);
-
-    useEffect(() => {
-        if (data.make_id) {
-            const filteredModels = plantModels.filter((model) => model.make_id === data.make_id);
-            setAvailablePlantModels(filteredModels);
-            setData((prev) => ({ ...prev, model_id: "" }));
-        } else {
-            setAvailablePlantModels([]);
-        }
-    }, [data.make_id]);
-
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        post(route('alerts.store'), {
+        put(route(editUrl, editData.id), {
+            preserveScroll: true,
             onSuccess: () => {
                 reset();
-                setOpen(false);
-                setAvailablePlantMakes([]);
-                setAvailablePlantModels([]);
+                onOpenChange(false);
             },
+            onError: (error) => {
+                console.error(`Failed to update ${editTitle}: `, error);
+            }
         });
     }
 
     const handleOpenChange = (newOpen: boolean) => {
-        setOpen(newOpen);
+        onOpenChange(newOpen);
         if (!newOpen) {
             reset();
         }
@@ -161,14 +196,11 @@ export default function CreateAlertDialog({
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                {children}
-            </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Create Alert</DialogTitle>
+                    <DialogTitle>Create {editTitle}</DialogTitle>
                     <DialogDescription>
-                        Add a new alert to the system. Fill in the details below.
+                        Add a new {editDescription} to the system. Fill in the details below.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={submit}>
@@ -179,7 +211,6 @@ export default function CreateAlertDialog({
                             </Label>
                             <Input
                                 id="number"
-                                tabIndex={1}
                                 value={data.number}
                                 onChange={(e) => setData('number', e.target.value)}
                                 placeholder="Enter alert number"
@@ -214,9 +245,8 @@ export default function CreateAlertDialog({
                             </Label>
                             <Input
                                 id="incident_date"
-                                tabIndex={2}
                                 type="date"
-                                value={data.incident_date}
+                                value={new Date(data.incident_date).toLocaleDateString('en-CA') || ''}
                                 onChange={(e) => setData('incident_date', e.target.value)}
                                 className={errors.incident_date ? "border-red-500" : ""}
                             />
@@ -229,7 +259,6 @@ export default function CreateAlertDialog({
                             <Label htmlFor="description">Description</Label>
                             <Textarea
                                 id="description"
-                                tabIndex={3}
                                 value={data.description}
                                 onChange={(e) => setData('description', e.target.value)}
                                 placeholder="Enter description"
@@ -244,7 +273,6 @@ export default function CreateAlertDialog({
                             <Label htmlFor="hyperlink_url">Hyperlink URL</Label>
                             <Input
                                 id="hyperlink_url"
-                                tabIndex={4}
                                 type="url"
                                 value={data.hyperlink_url}
                                 onChange={(e) => setData('hyperlink_url', e.target.value)}
@@ -312,7 +340,7 @@ export default function CreateAlertDialog({
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="type_id">Plant Type</Label>
+                            <Label htmlFor="type_id">Plant Type <span className="text-red-500">*</span></Label>
                             <Select
                                 options={plantTypeOptions}
                                 value={plantTypeOptions.find(option => option.value === data.type_id) || null}
@@ -336,7 +364,7 @@ export default function CreateAlertDialog({
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="make_id">Plant Make</Label>
+                            <Label htmlFor="make_id">Plant Make <span className="text-red-500">*</span></Label>
                             <Select
                                 options={plantMakeOptions}
                                 value={plantMakeOptions.find(option => option.value === data.make_id) || null}
@@ -360,7 +388,7 @@ export default function CreateAlertDialog({
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="model_id">Plant Model</Label>
+                            <Label htmlFor="model_id">Plant Model <span className="text-red-500">*</span></Label>
                             <Select
                                 options={plantModelOptions}
                                 value={plantModelOptions.find(option => option.value === data.model_id) || null}
@@ -384,10 +412,9 @@ export default function CreateAlertDialog({
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="hazards">Hazards</Label>
+                            <Label htmlFor="hazards">Hazards <span className="text-red-500">*</span></Label>
                             <Textarea
                                 id="hazards"
-                                tabIndex={5}
                                 value={data.hazards}
                                 onChange={(e) => setData('hazards', e.target.value)}
                                 placeholder="Enter hazards"
@@ -402,7 +429,7 @@ export default function CreateAlertDialog({
                         <Button
                             type="button"
                             variant="outline"
-                            onClick={() => setOpen(false)}
+                            onClick={() => onOpenChange(false)}
                             disabled={processing}
                         >
                             Cancel
@@ -411,7 +438,7 @@ export default function CreateAlertDialog({
                             type="submit"
                             disabled={processing}
                         >
-                            {processing ? "Creating..." : "Create Alert"}
+                            {processing ? "Updating..." : "Update Alert"}
                         </Button>
                     </DialogFooter>
                 </form>

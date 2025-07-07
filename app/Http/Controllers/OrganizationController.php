@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Organization;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class OrganizationController extends Controller
 {
@@ -14,7 +15,7 @@ class OrganizationController extends Controller
     public function index()
     {
         try {
-            $organizations = Organization::latest()->paginate(10);
+            $organizations = Organization::latest()->get();
 
             return inertia('organizations/index', [
                 'organizations' => $organizations,
@@ -54,6 +55,8 @@ class OrganizationController extends Controller
             Organization::create($validatedData);
 
             return redirect()->route('organizations.index')->with('success', 'Organization created successfully.');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error storing organization: ' . $e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());
@@ -110,6 +113,8 @@ class OrganizationController extends Controller
             $organization->update($validatedData);
 
             return redirect()->route('organizations.index')->with('success', 'Organization updated successfully.');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error updating organization: ' . $e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());

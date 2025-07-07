@@ -15,31 +15,27 @@ import {
 } from "@/components/ui/sidebar"
 import { Head } from "@inertiajs/react"
 import { Button } from "@/components/ui/button"
-import { PlantMake, plantMakeColumns, PlantType } from "@/components/ui/column"
+import { createPlantMakeColumns, PlantMake, PlantType } from "@/components/ui/column"
 import { DataTable } from "@/components/ui/data-table"
 import CreateMakeDialog from "./create"
 import useFlashMessages from "@/hooks/use-flash-messages"
-
-interface PaginatedMakes {
-    data: PlantMake[]
-    current_page: number
-    last_page: number
-    per_page: number
-    total: number
-}
+import { Plus } from "lucide-react"
 
 export default function Index({
     plantMakes,
     plantTypes,
-}: { plantMakes: PaginatedMakes; plantTypes: PlantType[] }) {
+}: {
+    plantMakes: PlantMake[],
+    plantTypes: PlantType[],
+}) {
 
     useFlashMessages();
-    // Extract the data array from the paginated response
-    const data: PlantMake[] = plantMakes?.data || []
+
+    const plantMakeColumns = createPlantMakeColumns(plantTypes);
 
     return (
         <>
-            <Head title="Dashboard" />
+            <Head title="Plant Makes" />
             <SidebarProvider>
                 <AppSidebar />
                 <SidebarInset>
@@ -66,13 +62,21 @@ export default function Index({
                         </div>
                     </header>
                     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-                        <div className="min-h-[100vh] flex-1 rounded-xl md:min-h-min">
+                        <div className="min-h-[100vh] flex-1 md:min-h-min">
                             <CreateMakeDialog
                                 plantTypes={plantTypes}
                             >
-                                <Button className="mb-2">Add new item</Button>
+                                <Button className="mt-2">
+                                    <Plus />
+                                    Add new item
+                                </Button>
                             </CreateMakeDialog>
-                            <DataTable columns={plantMakeColumns} data={data} />
+                            <DataTable
+                                columns={plantMakeColumns}
+                                data={plantMakes}
+                                filterValue1="name"
+                                filterValue2="description"
+                            />
                         </div>
                     </div>
                 </SidebarInset>

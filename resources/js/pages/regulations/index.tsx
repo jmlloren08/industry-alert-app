@@ -19,6 +19,7 @@ import { DataTable } from "../../components/ui/data-table"
 import { Button } from "@/components/ui/button"
 import CreateRegulationDialog from "./create"
 import useFlashMessages from "@/hooks/use-flash-messages"
+import { Plus } from "lucide-react"
 
 export default function Index({ regulations }: { regulations: Regulation[] }) {
 
@@ -26,7 +27,7 @@ export default function Index({ regulations }: { regulations: Regulation[] }) {
 
     return (
         <>
-            <Head title="Dashboard" />
+            <Head title="Regulations" />
             <SidebarProvider>
                 <AppSidebar />
                 <SidebarInset>
@@ -46,16 +47,19 @@ export default function Index({ regulations }: { regulations: Regulation[] }) {
                                     </BreadcrumbItem>
                                     <BreadcrumbSeparator className="hidden md:block" />
                                     <BreadcrumbItem>
-                                        <BreadcrumbPage>Regulations</BreadcrumbPage>
+                                        <BreadcrumbPage>Coal Mining Safety and Health Regulation 2017 (CMSHR 2017)</BreadcrumbPage>
                                     </BreadcrumbItem>
                                 </BreadcrumbList>
                             </Breadcrumb>
                         </div>
                     </header>
                     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-                        <div className="min-h-[100vh] flex-1 rounded-xl md:min-h-min">
+                        <div className="min-h-[100vh] flex-1 md:min-h-min">
                             <CreateRegulationDialog>
-                                <Button className="mb-2">Add new item</Button>
+                                <Button className="mt-2">
+                                    <Plus />
+                                    Add new item
+                                    </Button>
                             </CreateRegulationDialog>
                             
                             <DataTable

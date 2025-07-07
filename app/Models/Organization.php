@@ -21,10 +21,4 @@ class Organization extends Model
         'description',
         'is_active',
     ];
-
-    protected $casts = [
-        'is_active' => 'boolean',
-        'created_at' => 'timestamp',
-        'updated_at' => 'timestamp',
-    ];
 }

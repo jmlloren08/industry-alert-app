@@ -22,12 +22,17 @@ import { Button } from "./button"
 import React from "react"
 import { Input } from "./input"
 import { DataTablePagination } from "./pagination-controls"
+import { ExportColumn } from "../exports/export-to"
+import { DataTableToolbar } from "../exports/data-table-toolbar"
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
     filterValue1: string
     filterValue2: string
+    exportColumns?: ExportColumn[]
+    exportFilename?: string
+    exportTitle?: string
 }
 
 export function DataTable<TData, TValue>({
@@ -35,6 +40,9 @@ export function DataTable<TData, TValue>({
     data,
     filterValue1,
     filterValue2,
+    exportColumns,
+    exportFilename = 'export',
+    exportTitle = 'Data Export',
 }: DataTableProps<TData, TValue>) {
 
     const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -60,10 +68,23 @@ export function DataTable<TData, TValue>({
         },
     });
 
+    // Get filtered data for export
+    const filteredData = table.getFilteredRowModel().rows.map((row) => row.original);
+    // const exportData = data;
+
     return (
-        <div>
+        <div className="mt-2">
             {/* filter sections / descriptions */}
-            <div className="flex items-center py-4 gap-2">
+            <div className="flex items-center py-4 gap-2 border-t border-t-gray-200 border-b border-b-gray-200">
+                {/* Export Toolbar */}
+                {exportColumns && (
+                    <DataTableToolbar
+                        data={filteredData}
+                        exportColumns={exportColumns}
+                        filename={exportFilename}
+                        title={exportTitle}
+                    />
+                )}
                 <Input
                     placeholder={`Filter ${filterValue1}...`}
                     value={(table.getColumn(`${filterValue1}`)?.getFilterValue() as string) ?? ""}
