@@ -1,13 +1,14 @@
 import { router, useForm } from "@inertiajs/react"
-import { Alert } from "../ui/column-alerts";
+import { Alert, Hazard, Regulation } from "../ui/column-alerts";
 import React, { useEffect, useState } from "react";
-import { Organization, PlantMake, PlantModel, PlantType, Regulation, Site, Source } from "../ui/column";
+import { Organization, PlantMake, PlantModel, PlantType, Site, Source } from "../ui/column";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import Select from 'react-select';
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
+import Swal from "sweetalert2";
 
 interface EditAlertsDialogProps {
     editUrl: string
@@ -23,6 +24,7 @@ interface EditAlertsDialogProps {
     plantTypes?: PlantType[]
     plantMakes?: PlantMake[]
     plantModels?: PlantModel[]
+    hazards?: Hazard[]
 }
 
 export default function EditAlertsDialog({
@@ -39,6 +41,7 @@ export default function EditAlertsDialog({
     plantTypes = [],
     plantMakes = [],
     plantModels = [],
+    hazards = [],
 }: EditAlertsDialogProps) {
 
     const [availablePlantMakes, setAvailablePlantMakes] = useState<PlantMake[]>([]);
@@ -56,13 +59,14 @@ export default function EditAlertsDialog({
         type_id: "",
         make_id: "",
         model_id: "",
-        hazards: "",
+        hazard_ids: [] as string[],
     });
 
     useEffect(() => {
         if (open && editData) {
 
             const regulationIds = editData.regulations?.map((regulation: Regulation) => regulation.id) || [];
+            const hazardIds = editData.hazards?.map((hazard: Hazard) => hazard.id) || [];
 
             setData({
                 number: editData.number || "",
@@ -76,7 +80,7 @@ export default function EditAlertsDialog({
                 type_id: editData.plant_type?.id || "",
                 make_id: editData.plant_make?.id || "",
                 model_id: editData.plant_model?.id || "",
-                hazards: editData.hazards || "",
+                hazard_ids: hazardIds,
             });
         }
     }, [open, editData]);
@@ -149,9 +153,26 @@ export default function EditAlertsDialog({
         description: plantModel.description,
     })) || [];
 
+    const hazardOptions = hazards.map((hazard) => ({
+        value: hazard.id,
+        label: hazard.name,
+        description: hazard.description,
+    })) || [];
+
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-
+        // Show a loading alert while processing
+        Swal.fire({
+            title: 'Processing...',
+            html: 'Please wait while we process your request',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        // Put the form data
         put(route(editUrl, editData.id), {
             preserveScroll: true,
             onSuccess: () => {
@@ -198,9 +219,9 @@ export default function EditAlertsDialog({
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Create {editTitle}</DialogTitle>
+                    <DialogTitle>Edit {editTitle}</DialogTitle>
                     <DialogDescription>
-                        Add a new {editDescription} to the system. Fill in the details below.
+                        Update the {editDescription} details below.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={submit}>
@@ -244,10 +265,11 @@ export default function EditAlertsDialog({
                                 Incident Date <span className="text-red-500">*</span>
                             </Label>
                             <Input
-                                id="incident_date"
                                 type="date"
-                                value={new Date(data.incident_date).toLocaleDateString('en-CA') || ''}
+                                id="incident_date"
+                                value={data.incident_date}
                                 onChange={(e) => setData('incident_date', e.target.value)}
+                                placeholder="Enter incident date"
                                 className={errors.incident_date ? "border-red-500" : ""}
                             />
                             {errors.incident_date && (
@@ -289,7 +311,7 @@ export default function EditAlertsDialog({
                             <Select
                                 isMulti
                                 options={regulationOptions}
-                                value={regulationOptions.filter(option => data.regulation_ids.includes(option.value))}
+                                value={regulationOptions.filter((option) => data.regulation_ids.includes(option.value))}
                                 onChange={(selectedOptions) => {
                                     const values = selectedOptions?.map(option => option.value) || [];
                                     setData('regulation_ids', values);
@@ -413,15 +435,21 @@ export default function EditAlertsDialog({
 
                         <div className="grid gap-2">
                             <Label htmlFor="hazards">Hazards <span className="text-red-500">*</span></Label>
-                            <Textarea
-                                id="hazards"
-                                value={data.hazards}
-                                onChange={(e) => setData('hazards', e.target.value)}
-                                placeholder="Enter hazards"
-                                className={errors.hazards ? "border-red-500" : ""}
+                            <Select
+                                isMulti
+                                options={hazardOptions}
+                                value={hazardOptions.filter((option) => data.hazard_ids.includes(option.value))}
+                                onChange={(selectedOptions) => {
+                                    const values = selectedOptions?.map((option) => option.value) || [];
+                                    setData('hazard_ids', values);
+                                }}
+                                placeholder="Select hazards..."
+                                isClearable
+                                isSearchable
+                                styles={errors.hazard_ids ? errorSelectStyles : selectStyles}
                             />
-                            {errors.hazards && (
-                                <p className="text-sm text-red-500">{errors.hazards}</p>
+                            {errors.hazard_ids && (
+                                <p className="text-sm text-red-500">{errors.hazard_ids}</p>
                             )}
                         </div>
                     </div>

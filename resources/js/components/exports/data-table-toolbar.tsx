@@ -47,7 +47,7 @@ export function DataTableToolbar({
             <div className="flex items-center space-x-2">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline">
                             <Download />
                             Export
                         </Button>

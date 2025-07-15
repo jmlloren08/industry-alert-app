@@ -66,7 +66,7 @@ export default function Index({
                             <CreateMakeDialog
                                 plantTypes={plantTypes}
                             >
-                                <Button className="mt-2">
+                                <Button className="mt-2" size="sm">
                                     <Plus />
                                     Add new item
                                 </Button>

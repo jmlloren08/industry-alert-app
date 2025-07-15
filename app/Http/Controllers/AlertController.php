@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Alert;
+use App\Models\Hazard;
 use App\Models\Organization;
 use App\Models\PlantMake;
 use App\Models\PlantModel;
@@ -11,6 +12,7 @@ use App\Models\Regulation;
 use App\Models\Site;
 use App\Models\Source;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
@@ -23,7 +25,7 @@ class AlertController extends Controller
     {
         try {
 
-            $alerts = Alert::with(['source', 'regulations', 'organization', 'site', 'plantType', 'plantMake', 'plantModel'])
+            $alerts = Alert::with(['source', 'regulations', 'organization', 'site', 'plantType', 'plantMake', 'plantModel', 'hazards'])
                 ->latest()
                 ->get();
 
@@ -55,6 +57,10 @@ class AlertController extends Controller
                 ->orderBy('name', 'asc')
                 ->get();
 
+            $hazards = Hazard::where('is_active', true)
+                ->orderBy('name', 'asc')
+                ->get();
+
             return inertia('alerts/index', [
                 'alerts' => $alerts,
                 'sources' => $sources,
@@ -64,6 +70,7 @@ class AlertController extends Controller
                 'plantTypes' => $plantTypes,
                 'plantMakes' => $plantMakes,
                 'plantModels' => $plantModels,
+                'hazards' => $hazards,
             ]);
         } catch (\Exception $e) {
             Log::error('Error fetching alerts: ' . $e->getMessage());
@@ -99,21 +106,29 @@ class AlertController extends Controller
                 'hyperlink_url' => 'nullable|url|max:255',
                 'regulation_ids' => 'nullable|array',
                 'regulation_ids.*' => 'uuid|exists:regulations,id',
-                'organization_id' => 'required|exists:organizations,id',
-                'site_id' => 'required|exists:sites,id',
+                'organization_id' => 'nullable|exists:organizations,id',
+                'site_id' => 'nullable|exists:sites,id',
                 'type_id' => 'nullable|exists:plant_types,id',
                 'make_id' => 'nullable|exists:plant_makes,id',
                 'model_id' => 'nullable|exists:plant_models,id',
-                'hazards' => 'nullable|string|max:1000',
+                'hazard_ids' => 'nullable|array',
+                'hazard_ids.*' => 'uuid|exists:hazards,id',
             ]);
 
             $regulationIds = $validatedData['regulation_ids'] ?? [];
             unset($validatedData['regulation_ids']);
 
+            $hazardIds = $validatedData['hazard_ids'] ?? [];
+            unset($validatedData['hazard_ids']);
+
             $alert = Alert::create($validatedData);
 
             if (!empty($regulationIds)) {
                 $alert->regulations()->attach($regulationIds);
+            }
+
+            if (!empty($hazardIds)) {
+                $alert->hazards()->attach($hazardIds);
             }
 
             return redirect()->route('alerts.index')->with('success', 'Alert created successfully.');
@@ -173,26 +188,144 @@ class AlertController extends Controller
                 'hyperlink_url' => 'nullable|url|max:255',
                 'regulation_ids' => 'nullable|array',
                 'regulation_ids.*' => 'uuid|exists:regulations,id',
-                'organization_id' => 'required|exists:organizations,id',
-                'site_id' => 'required|exists:sites,id',
+                'organization_id' => 'nullable|exists:organizations,id',
+                'site_id' => 'nullable|exists:sites,id',
                 'type_id' => 'nullable|exists:plant_types,id',
                 'make_id' => 'nullable|exists:plant_makes,id',
                 'model_id' => 'nullable|exists:plant_models,id',
-                'hazards' => 'nullable|string|max:1000',
+                'hazard_ids' => 'nullable|array',
+                'hazards_ids.*' => 'uuid|exists:hazards,id',
             ]);
 
             $regulationIds = $validatedData['regulation_ids'] ?? [];
             unset($validatedData['regulation_ids']);
 
+            $hazardIds = $validatedData['hazard_ids'] ?? [];
+            unset($validatedData['hazard_ids']);
+
             $alert->update($validatedData);
 
             $alert->regulations()->sync($regulationIds);
+            $alert->hazards()->sync($hazardIds);
 
             return redirect()->route('alerts.index')->with('success', 'Alert updated successfully.');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error updating alert: ' . $e->getMessage());
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function bulkEdit(Request $request)
+    {
+        try {
+            $ids = $request->input('ids', []);
+
+            if (empty($ids)) {
+                return redirect()->route('alerts.index')->with('error', 'No alerts selected for bulk edit.');
+            }
+
+            $alerts = Alert::with(['source', 'regulations', 'organization', 'site', 'plantType', 'plantMake', 'plantModel', 'hazards'])
+                ->whereIn('id', $ids)
+                ->get();
+
+            $sources = Source::where('is_active', true)
+                ->orderBy('name', 'asc')
+                ->get();
+
+            $regulations = Regulation::where('is_active', true)
+                ->orderBy('section', 'asc')
+                ->get();
+
+            $organizations = Organization::where('is_active', true)
+                ->orderBy('name', 'asc')
+                ->get();
+
+            $sites = Site::where('is_active', true)
+                ->orderBy('name', 'asc')
+                ->get();
+
+            $plantTypes = PlantType::where('is_active', true)
+                ->orderBy('name', 'asc')
+                ->get();
+
+            $plantMakes = PlantMake::where('is_active', true)
+                ->orderBy('name', 'asc')
+                ->get();
+
+            $plantModels = PlantModel::where('is_active', true)
+                ->orderBy('name', 'asc')
+                ->get();
+
+            $hazards = Hazard::where('is_active', true)
+                ->orderBy('name', 'asc')
+                ->get();
+
+            return inertia('alerts/bulk-edit', [
+                'alerts' => $alerts,
+                'sources' => $sources,
+                'regulations' => $regulations,
+                'organizations' => $organizations,
+                'sites' => $sites,
+                'plantTypes' => $plantTypes,
+                'plantMakes' => $plantMakes,
+                'plantModels' => $plantModels,
+                'hazards' => $hazards,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error showing bulk edit form: ' . $e->getMessage());
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function bulkUpdate(Request $request)
+    {
+        try {
+
+            $alertsData = $request->input('alerts', []);
+
+            if (empty($alertsData)) {
+                return redirect()->back()->with('error', 'No alerts data provided.');
+            }
+
+            DB::beginTransaction();
+
+            foreach ($alertsData as $alertData) {
+                $alert = Alert::findOrFail($alertData['id']);
+                // Update basic fields
+                $alert->update([
+                    'number' => $alertData['number'],
+                    'source_id' => $alertData['source_id'],
+                    'incident_date' => $alertData['incident_date'],
+                    'description' => $alertData['description'],
+                    'hyperlink_url' => $alertData['hyperlink_url'],
+                    'organization_id' => $alertData['organization_id'],
+                    'site_id' => $alertData['site_id'],
+                    'type_id' => $alertData['type_id'],
+                    'make_id' => $alertData['make_id'],
+                    'model_id' => $alertData['model_id'],
+                ]);
+
+                // Sync many-to-many relationships
+                if (isset($alertData['regulation_ids'])) {
+                    $alert->regulations()->sync($alertData['regulation_ids']);
+                }
+
+                if (isset($alertData['hazard_ids'])) {
+                    $alert->hazards()->sync($alertData['hazard_ids']);
+                }
+            }
+
+            DB::commit();
+
+            $count = count($alertsData);
+
+            return redirect()->route('alerts.index')->with('success', "Successfully updated $count alert(s).");
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            Log::error('Error bulk updating alerts: ' . $e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());
         }
     }

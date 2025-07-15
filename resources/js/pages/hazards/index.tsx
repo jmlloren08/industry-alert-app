@@ -1,41 +1,23 @@
-import { AppSidebar } from "@/components/app-sidebar"
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import {
-    SidebarInset,
-    SidebarProvider,
-    SidebarTrigger,
-} from "@/components/ui/sidebar"
-import { Head } from "@inertiajs/react"
-import { Button } from "@/components/ui/button"
-import { createPlantModelColumns, PlantMake, PlantModel } from "@/components/ui/column"
-import { DataTable } from "@/components/ui/data-table"
-import CreateModelDialog from "./create"
-import useFlashMessages from "@/hooks/use-flash-messages"
-import { Plus } from "lucide-react"
+import { AppSidebar } from "@/components/app-sidebar";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { hazardColumns } from "@/components/ui/column";
+import { Separator } from "@/components/ui/separator";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import useFlashMessages from "@/hooks/use-flash-messages";
+import { Head } from "@inertiajs/react";
+import CreateHazardDialog from "./create";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { DataTable } from "@/components/ui/data-table";
+import { Hazard } from "@/components/ui/column-alerts";
 
-export default function Index({
-    plantModels,
-    plantMakes,
-}: {
-    plantModels: PlantModel[],
-    plantMakes: PlantMake[],
-}) {
+export default function Index({ hazards }: { hazards: Hazard[] }) {
 
     useFlashMessages();
 
-    const plantModelColumns = createPlantModelColumns(plantMakes);
-
     return (
         <>
-            <Head title="Plant Models" />
+            <Head title="Hazards" />
             <SidebarProvider>
                 <AppSidebar />
                 <SidebarInset>
@@ -55,7 +37,7 @@ export default function Index({
                                     </BreadcrumbItem>
                                     <BreadcrumbSeparator className="hidden md:block" />
                                     <BreadcrumbItem>
-                                        <BreadcrumbPage>Plant Models</BreadcrumbPage>
+                                        <BreadcrumbPage>Hazards</BreadcrumbPage>
                                     </BreadcrumbItem>
                                 </BreadcrumbList>
                             </Breadcrumb>
@@ -63,17 +45,15 @@ export default function Index({
                     </header>
                     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
                         <div className="min-h-[100vh] flex-1 md:min-h-min">
-                            <CreateModelDialog
-                                plantMakes={plantMakes}
-                            >
+                            <CreateHazardDialog>
                                 <Button className="mt-2" size="sm">
                                     <Plus />
                                     Add new item
                                 </Button>
-                            </CreateModelDialog>
+                            </CreateHazardDialog>
                             <DataTable
-                                columns={plantModelColumns}
-                                data={plantModels}
+                                columns={hazardColumns}
+                                data={hazards}
                                 filterValue1="name"
                                 filterValue2="description"
                             />

@@ -2,6 +2,15 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Alert;
+use App\Models\Hazard;
+use App\Models\Organization;
+use App\Models\PlantMake;
+use App\Models\PlantModel;
+use App\Models\PlantType;
+use App\Models\Regulation;
+use App\Models\Site;
+use App\Models\Source;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use League\Csv\Reader;
@@ -45,7 +54,7 @@ class ImportAlertsFromCsv extends Command
 
             try {
                 // Skip if alert number already exists
-                $exists = DB::table('industry_alerts')->where('number', $record['number'])->exists();
+                $exists = Alert::where('number', $record['number'])->exists();
                 if ($exists) {
                     $this->warn('⚠️ Alert number ' . $record['number'] . ' already exists. Skipping.');
                     DB::rollBack();
@@ -54,12 +63,13 @@ class ImportAlertsFromCsv extends Command
 
                 $alertId = (string) Str::uuid();
                 // Fetch FK IDs // Lookups
-                $sourceId = DB::table('sources')->where('name', $record['source_id'])->value('id');
-                $organizationId = DB::table('organizations')->where('name', $record['organization_id'])->value('id');
-                $siteId = DB::table('sites')->where('name', $record['site_id'])->value('id');
-                $plantTypeId = DB::table('plant_types')->where('name', $record['type_id'])->value('id');
-                $plantMakeId = DB::table('plant_makes')->where('name', $record['make_id'])->where('type_id', $plantTypeId)->value('id');
-                $plantModelId = DB::table('plant_models')->where('name', $record['model_id'])->where('make_id', $plantMakeId)->value('id');
+                $sourceId = Source::where('name', $record['source_id'])->value('id');
+                $organizationId = Organization::where('name', $record['organization_id'])->value('id');
+                $siteId = Site::where('name', $record['site_id'])->value('id');
+                $plantTypeId = PlantType::where('name', $record['type_id'])->value('id');
+                $plantMakeId = PlantMake::where('name', $record['make_id'])->where('type_id', $plantTypeId)->value('id');
+                $plantModelId = PlantModel::where('name', $record['model_id'])->where('make_id', $plantMakeId)->value('id');
+
                 // Validate required fields
                 if (!$sourceId || !$organizationId || !$siteId) {
                     $this->warn('⚠️ Missing required foreign key for alert number ' . $record['number'] . '. Skipping.');
@@ -67,20 +77,19 @@ class ImportAlertsFromCsv extends Command
                     continue;
                 }
 
-                // Insert into alerts table
-
                 $description  = $record['description'];
                 $description = str_replace(["\xA0", "\xC2\xA0"], ' ', $description);
                 $description = preg_replace('/[\s\p{Zs}\x{00a0}]+$/u', '', $description);
                 $description = trim($description);
-                
+
                 if (empty($description)) {
                     $this->warn('⚠️ Description is empty for alert number ' . $record['number'] . '. Skipping.');
                     DB::rollBack();
                     continue;
                 }
 
-                DB::table('industry_alerts')->insert([
+                // Insert into alerts table
+                Alert::insert([
                     'id' => $alertId,
                     'number' => $record['number'],
                     'source_id' => $sourceId,
@@ -92,7 +101,6 @@ class ImportAlertsFromCsv extends Command
                     'type_id' => $plantTypeId,
                     'make_id' => $plantMakeId,
                     'model_id' => $plantModelId,
-                    'hazards' => $record['hazards'],
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -101,7 +109,7 @@ class ImportAlertsFromCsv extends Command
                 $regulations = array_map('trim', explode(',', $record['regulation_id']));
 
                 foreach ($regulations as $regCode) {
-                    $regulationId = DB::table('regulations')->where('section', $regCode)->value('id');
+                    $regulationId = Regulation::where('section', $regCode)->value('id');
                     if ($regulationId) {
                         DB::table('alerts_regulations')->insert([
                             'alert_id' => $alertId,
@@ -111,6 +119,22 @@ class ImportAlertsFromCsv extends Command
                         ]);
                     }
                 }
+
+                // Handle hazards (pivot table)
+                $hazards = array_map('trim', explode(',', $record['hazard_id']));
+
+                foreach ($hazards as $hazardName) {
+                    $hazardId = Hazard::where('name', $hazardName)->value('id');
+                    if ($hazardId) {
+                        DB::table('alerts_hazards')->insert([
+                            'alert_id' => $alertId,
+                            'hazard_id' => $hazardId,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                }
+
                 DB::commit();
                 $this->info('✅ CSV import successful!');
             } catch (\Throwable $e) {

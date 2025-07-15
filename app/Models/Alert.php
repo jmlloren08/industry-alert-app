@@ -65,4 +65,9 @@ class Alert extends Model
     {
         return $this->belongsTo(PlantModel::class, 'model_id');
     }
+
+    public function hazards()
+    {
+        return $this->belongsToMany(Hazard::class, 'alerts_hazards', 'alert_id', 'hazard_id');
+    }
 }

@@ -34,7 +34,7 @@ export default function ShowAlertsDialog({
                         </div>
                         <div>
                             <Label className="text-sm font-medium text-gray-500">Incident Date</Label>
-                            <p className="mt-1">{new Date(data.incident_date).toLocaleDateString()}</p>
+                            <p className="mt-1">{new Date(data.incident_date).toLocaleDateString('en-AU')}</p>
                         </div>
                         <div>
                             <Label className="text-sm font-medium text-gray-500">Description</Label>
@@ -91,7 +91,22 @@ export default function ShowAlertsDialog({
                         </div>
                         <div>
                             <Label className="text-sm font-medium text-gray-500">Hazards</Label>
-                            <p className="mt-1">{data.hazards || "N/A"}</p>
+                            {data.hazards && data.hazards.length > 0 ? (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {data.hazards.map((hazard) => (
+                                        <Badge
+                                            key={hazard.id}
+                                            variant="default"
+                                            className="truncate"
+                                            title={`${hazard.name} - ${hazard.description || "No hazards provided"}`}
+                                        >
+                                            {hazard.name || "No hazards provided"}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="mt-1">No hazards associated</p>
+                            )}
                         </div>
                         <div>
                             <Label className="text-sm font-medium text-gray-500">Created At</Label>

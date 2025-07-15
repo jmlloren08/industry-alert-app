@@ -2,6 +2,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "./button"
 import { ArrowUpDown } from "lucide-react"
 import ColumnActions from "../actions/column-actions"
+import { Hazard, Regulation } from "./column-alerts"
 
 export type Source = {
     id: string
@@ -10,15 +11,6 @@ export type Source = {
     is_active: boolean
     created_at: string
     updated_at: string
-}
-
-export type Regulation = {
-    id: string
-    section: string
-    description?: string
-    is_active: boolean
-    created_at: Date
-    updated_at: Date
 }
 
 export type Organization = {
@@ -73,7 +65,17 @@ export type PlantModel = {
 export const sourceColumns: ColumnDef<Source>[] = [
     {
         accessorKey: "name",
-        header: "Name",
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant='ghost'
+                    onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                >
+                    Name
+                    <ArrowUpDown />
+                </Button>
+            );
+        },
     },
     {
         accessorKey: "description",
@@ -180,7 +182,17 @@ export const regulationColumns: ColumnDef<Regulation>[] = [
 export const organizationColumns: ColumnDef<Organization>[] = [
     {
         accessorKey: "name",
-        header: "Name",
+        header: ({column}) => {
+            return (
+                <Button
+                    variant='ghost'
+                    onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                >
+                    Name
+                    <ArrowUpDown />
+                </Button>
+            );
+        },
     },
     {
         accessorKey: "description",
@@ -227,7 +239,17 @@ export const organizationColumns: ColumnDef<Organization>[] = [
 export const siteColumns: ColumnDef<Site>[] = [
     {
         accessorKey: "name",
-        header: "Name",
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant='ghost'
+                    onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                >
+                    Name
+                    <ArrowUpDown />
+                </Button>
+            );
+        },
     },
     {
         accessorKey: "description",
@@ -274,7 +296,17 @@ export const siteColumns: ColumnDef<Site>[] = [
 export const plantTypeColumns: ColumnDef<PlantType>[] = [
     {
         accessorKey: "name",
-        header: "Type",
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant='ghost'
+                    onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                >
+                    Name
+                    <ArrowUpDown />
+                </Button>
+            );
+        },
     },
     {
         accessorKey: "description",
@@ -328,7 +360,17 @@ export const createPlantMakeColumns = (plantTypes: PlantType[] = []): ColumnDef<
     },
     {
         accessorKey: "name",
-        header: "Make",
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant='ghost'
+                    onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                >
+                    Name
+                    <ArrowUpDown />
+                </Button>
+            );
+        },
     },
     {
         accessorKey: "description",
@@ -383,7 +425,17 @@ export const createPlantModelColumns = (plantMakes: PlantMake[] = []): ColumnDef
     },
     {
         accessorKey: "name",
-        header: "Model",
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant='ghost'
+                    onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                >
+                    Name
+                    <ArrowUpDown />
+                </Button>
+            );
+        },
     },
     {
         accessorKey: "description",
@@ -426,4 +478,61 @@ export const createPlantModelColumns = (plantMakes: PlantMake[] = []): ColumnDef
             );
         },
     },
+];
+
+export const hazardColumns: ColumnDef<Hazard>[] = [
+    {
+        accessorKey: "name",
+        header: ({ column}) => {
+            return (
+                <Button
+                    variant='ghost'
+                    onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                >
+                    Name
+                    <ArrowUpDown />
+                </Button>
+            );
+        }
+    },
+    {
+        accessorKey: "description",
+        header: "Description",
+        cell: ({ row }) => {
+            return (
+                <div
+                    className="max-w-[700px] truncate"
+                    title={row.original.description}
+                >
+                    {row.original.description}
+                </div>
+            )
+        }
+    },
+    {
+        accessorKey: "is_active",
+        header: "Active",
+        cell: ({ row }) => {
+            return row.original.is_active ? (
+                <span className="px-2 py-0.5 bg-green-100 border-green-500 rounded-full text-green-500">Yes</span>
+            ) : (
+                <span className="px-2 py-0.5 bg-red-100 border-red-500 rounded-full text-red-500">No</span>
+            )
+        },
+    },
+    {
+        id: "actions",
+        cell: ({ row }) => {
+            const hazard = row.original;
+            return (
+                <ColumnActions
+                    data={hazard}
+                    editUrl="hazards.update"
+                    deleteUrl="hazards.destroy"
+                    dialogTitle="Hazard"
+                    dialogDescription="hazard"
+                />
+            );
+        },
+    }
 ];

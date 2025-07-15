@@ -12,9 +12,11 @@ interface FlashData {
 interface PageProps {
     flash?: FlashData;
     [key: string]: unknown;
+    loading?: boolean;
 }
 
 export default function useFlashMessages() {
+
     const { flash = {} } = usePage<PageProps>().props;
 
     useEffect(() => {

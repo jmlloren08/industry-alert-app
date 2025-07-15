@@ -1,12 +1,12 @@
 import { DeleteIcon, EditIcon, EyeIcon, MoreHorizontal } from "lucide-react";
 import { Button } from "../ui/button";
-import { Alert } from "../ui/column-alerts";
+import { Alert, Hazard, Regulation } from "../ui/column-alerts";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import React from "react";
 import ShowAlertsDialog from "./show-alerts";
 import EditAlertsDialog from "./edit-alerts";
 import DeleteAlertsDialog from "./delete-alerts";
-import { Organization, PlantMake, PlantModel, PlantType, Regulation, Site, Source } from "../ui/column";
+import { Organization, PlantMake, PlantModel, PlantType, Site, Source } from "../ui/column";
 
 interface ColumnActionsAlertsProps {
     data: Alert
@@ -21,6 +21,7 @@ interface ColumnActionsAlertsProps {
     plantTypes?: PlantType[]
     plantMakes?: PlantMake[]
     plantModels?: PlantModel[]
+    hazards?: Hazard[]
 }
 
 export default function ColumnActionsAlerts({
@@ -36,6 +37,7 @@ export default function ColumnActionsAlerts({
     plantTypes = [],
     plantMakes = [],
     plantModels = [],
+    hazards = [],
 }: ColumnActionsAlertsProps) {
 
     const [showDialog, setShowDialog] = React.useState(false);
@@ -109,6 +111,7 @@ export default function ColumnActionsAlerts({
                 plantTypes={plantTypes}
                 plantMakes={plantMakes}
                 plantModels={plantModels}
+                hazards={hazards}
             />
             {/* Delete Dialog */}
             <DeleteAlertsDialog

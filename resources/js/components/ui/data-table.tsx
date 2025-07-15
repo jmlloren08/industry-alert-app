@@ -8,6 +8,7 @@ import {
     getSortedRowModel,
     getPaginationRowModel,
     useReactTable,
+    RowSelectionState,
 } from "@tanstack/react-table"
 
 import {
@@ -19,7 +20,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "./button"
-import React from "react"
+import React, { useEffect } from "react"
 import { Input } from "./input"
 import { DataTablePagination } from "./pagination-controls"
 import { ExportColumn } from "../exports/export-to"
@@ -33,6 +34,9 @@ interface DataTableProps<TData, TValue> {
     exportColumns?: ExportColumn[]
     exportFilename?: string
     exportTitle?: string
+    enableRowSelection?: boolean
+    onRowSelectionChange?: (selectedRows: TData[]) => void
+    customActions?: React.ReactNode
 }
 
 export function DataTable<TData, TValue>({
@@ -43,10 +47,14 @@ export function DataTable<TData, TValue>({
     exportColumns,
     exportFilename = 'export',
     exportTitle = 'Data Export',
+    enableRowSelection = false,
+    onRowSelectionChange,
+    customActions,
 }: DataTableProps<TData, TValue>) {
 
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+    const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
 
     const table = useReactTable({
         data,
@@ -62,11 +70,22 @@ export function DataTable<TData, TValue>({
         getSortedRowModel: getSortedRowModel(),
         onColumnFiltersChange: setColumnFilters,
         getFilteredRowModel: getFilteredRowModel(),
+        onRowSelectionChange: setRowSelection,
+        enableRowSelection: enableRowSelection,
         state: {
             sorting,
             columnFilters,
+            rowSelection,
         },
     });
+
+    // Update parent component when selection changes
+    useEffect(() => {
+        if (onRowSelectionChange) {
+            const selectedRows = table.getFilteredSelectedRowModel().rows.map((row) => row.original);
+            onRowSelectionChange(selectedRows);
+        }
+    }, [rowSelection, onRowSelectionChange, table]);
 
     // Get filtered data for export
     const filteredData = table.getFilteredRowModel().rows.map((row) => row.original);
@@ -76,6 +95,12 @@ export function DataTable<TData, TValue>({
         <div className="mt-2">
             {/* filter sections / descriptions */}
             <div className="flex items-center py-4 gap-2 border-t border-t-gray-200 border-b border-b-gray-200">
+                {/* Custom Actions */}
+                {customActions && (
+                    <div className="flex items-center gap-2">
+                        {customActions}
+                    </div>
+                )}
                 {/* Export Toolbar */}
                 {exportColumns && (
                     <DataTableToolbar
@@ -91,7 +116,7 @@ export function DataTable<TData, TValue>({
                     onChange={(event) =>
                         table.getColumn(`${filterValue1}`)?.setFilterValue(event.target.value)
                     }
-                    className="max-w-sm"
+                    className="max-w-xs"
                 />
                 <Input
                     placeholder={`Filter ${filterValue2}...`}
@@ -99,7 +124,7 @@ export function DataTable<TData, TValue>({
                     onChange={(event) =>
                         table.getColumn(`${filterValue2}`)?.setFilterValue(event.target.value)
                     }
-                    className="max-w-sm"
+                    className="max-w-xs"
                 />
             </div>
             {/* Table */}

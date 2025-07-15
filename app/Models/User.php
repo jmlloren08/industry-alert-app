@@ -21,6 +21,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'sso_password',
+        'email_verified_at',
+        'requires_sso_password_setup',
+
     ];
 
     /**
@@ -30,6 +34,7 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
+        'sso_password',
         'remember_token',
     ];
 
@@ -43,6 +48,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'sso_password' => 'hashed',
+            'requires_sso_password_setup' => 'boolean',
         ];
     }
 }

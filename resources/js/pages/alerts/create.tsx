@@ -13,8 +13,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Organization, PlantMake, PlantModel, PlantType, Regulation, Site, Source } from "@/components/ui/column";
+import { Organization, PlantMake, PlantModel, PlantType, Site, Source } from "@/components/ui/column";
 import Select from 'react-select';
+import "react-datepicker/dist/react-datepicker.css";
+import { Hazard, Regulation } from "@/components/ui/column-alerts";
 
 interface CreateAlertDialogProps {
     children: React.ReactNode,
@@ -25,7 +27,9 @@ interface CreateAlertDialogProps {
     plantTypes?: PlantType[],
     plantMakes?: PlantMake[],
     plantModels?: PlantModel[],
+    hazards?: Hazard[],
 }
+
 export default function CreateAlertDialog({
     children,
     sources = [],
@@ -35,11 +39,13 @@ export default function CreateAlertDialog({
     plantTypes = [],
     plantMakes = [],
     plantModels = [],
+    hazards = [],
 }: CreateAlertDialogProps) {
 
     const [open, setOpen] = useState(false);
     const [availablePlantMakes, setAvailablePlantMakes] = useState<PlantMake[]>([]);
     const [availablePlantModels, setAvailablePlantModels] = useState<PlantModel[]>([]);
+    const [incidentDate, setIncidentDate] = useState<Date | null | undefined>(null);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         number: "",
@@ -53,7 +59,7 @@ export default function CreateAlertDialog({
         type_id: "",
         make_id: "",
         model_id: "",
-        hazards: "",
+        hazard_ids: [] as string[],
     });
 
     const sourceOptions = sources.map((source) => ({
@@ -94,6 +100,11 @@ export default function CreateAlertDialog({
         description: plantModel.description,
     })) || [];
 
+    const hazardOptions = hazards.map((hazard) => ({
+        value: hazard.id,
+        label: hazard.name,
+    })) || [];
+
     useEffect(() => {
         if (data.type_id) {
             const filteredMakes = plantMakes.filter((make) => make.type_id === data.type_id);
@@ -122,6 +133,7 @@ export default function CreateAlertDialog({
         post(route('alerts.store'), {
             onSuccess: () => {
                 reset();
+                setIncidentDate(undefined);
                 setOpen(false);
                 setAvailablePlantMakes([]);
                 setAvailablePlantModels([]);
@@ -133,6 +145,7 @@ export default function CreateAlertDialog({
         setOpen(newOpen);
         if (!newOpen) {
             reset();
+            setIncidentDate(undefined);
         }
     }
 
@@ -213,11 +226,11 @@ export default function CreateAlertDialog({
                                 Incident Date <span className="text-red-500">*</span>
                             </Label>
                             <Input
-                                id="incident_date"
-                                tabIndex={2}
                                 type="date"
+                                id="incident_date"
                                 value={data.incident_date}
                                 onChange={(e) => setData('incident_date', e.target.value)}
+                                placeholder="Enter incident date"
                                 className={errors.incident_date ? "border-red-500" : ""}
                             />
                             {errors.incident_date && (
@@ -280,7 +293,7 @@ export default function CreateAlertDialog({
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="organization_id">Organization <span className="text-red-500">*</span></Label>
+                            <Label htmlFor="organization_id">Organization</Label>
                             <Select
                                 options={organizationOptions}
                                 value={organizationOptions.find(option => option.value === data.organization_id) || null}
@@ -296,7 +309,7 @@ export default function CreateAlertDialog({
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="site_id">Site <span className="text-red-500">*</span></Label>
+                            <Label htmlFor="site_id">Site</Label>
                             <Select
                                 options={siteOptions}
                                 value={siteOptions.find(option => option.value === data.site_id) || null}
@@ -312,7 +325,7 @@ export default function CreateAlertDialog({
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="type_id">Plant Type</Label>
+                            <Label htmlFor="type_id">Equipment (Std)</Label>
                             <Select
                                 options={plantTypeOptions}
                                 value={plantTypeOptions.find(option => option.value === data.type_id) || null}
@@ -336,7 +349,7 @@ export default function CreateAlertDialog({
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="make_id">Plant Make</Label>
+                            <Label htmlFor="make_id">Make (Std)</Label>
                             <Select
                                 options={plantMakeOptions}
                                 value={plantMakeOptions.find(option => option.value === data.make_id) || null}
@@ -360,7 +373,7 @@ export default function CreateAlertDialog({
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="model_id">Plant Model</Label>
+                            <Label htmlFor="model_id">Model (Std)</Label>
                             <Select
                                 options={plantModelOptions}
                                 value={plantModelOptions.find(option => option.value === data.model_id) || null}
@@ -385,16 +398,24 @@ export default function CreateAlertDialog({
 
                         <div className="grid gap-2">
                             <Label htmlFor="hazards">Hazards</Label>
-                            <Textarea
-                                id="hazards"
-                                tabIndex={5}
-                                value={data.hazards}
-                                onChange={(e) => setData('hazards', e.target.value)}
-                                placeholder="Enter hazards"
-                                className={errors.hazards ? "border-red-500" : ""}
+                            <Select
+                                isMulti
+                                options={hazardOptions}
+                                value={hazardOptions.filter((option) => data.hazard_ids.includes(option.value))}
+                                onChange={(selectedOptions) => {
+                                    const values = selectedOptions?.map((option) => option.value) || [];
+                                    setData('hazard_ids', values);
+                                }}
+                                placeholder="Select hazards..."
+                                isClearable
+                                isSearchable
+                                styles={errors.hazard_ids ? errorSelectStyles : selectStyles}
+                                formatOptionLabel={(option: any) => (
+                                    <div className="font-medium">{option.label}</div>
+                                )}
                             />
-                            {errors.hazards && (
-                                <p className="text-sm text-red-500">{errors.hazards}</p>
+                            {errors.hazard_ids && (
+                                <p className="text-sm text-red-500">{errors.hazard_ids}</p>
                             )}
                         </div>
                     </div>

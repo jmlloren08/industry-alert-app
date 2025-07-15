@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/sidebar"
 import { usePage } from "@inertiajs/react"
 import { SharedData } from "@/types"
+import { ScrollArea } from "./ui/scroll-area"
 
 const data = {
     teams: [
@@ -61,7 +62,11 @@ const data = {
                 {
                     title: "Models",
                     url: route('plant-models.index'),
-                }
+                },
+                {
+                    title: "Hazards",
+                    url: route('hazards.index'),
+                },
             ],
         },
     ],
@@ -82,15 +87,17 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     const { auth } = usePage<SharedData>().props;
-    
+
     return (
         <Sidebar collapsible="icon" {...props}>
             <SidebarHeader>
                 <TeamSwitcher teams={data.teams} />
             </SidebarHeader>
             <SidebarContent>
-                <NavPlatforms platforms={data.platforms} />
-                <NavMain items={data.navMain} />
+                <ScrollArea className="h-full">
+                    <NavPlatforms platforms={data.platforms} />
+                    <NavMain items={data.navMain} />
+                </ScrollArea>
             </SidebarContent>
             <SidebarFooter>
                 <NavUser user={auth.user} />

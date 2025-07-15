@@ -13,14 +13,16 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Head } from "@inertiajs/react"
-import { Source, Organization, Site, PlantType, PlantMake, PlantModel, Regulation } from "../../components/ui/column"
+import { Head, router } from "@inertiajs/react"
+import { Source, Organization, Site, PlantType, PlantMake, PlantModel } from "../../components/ui/column"
 import { DataTable } from "../../components/ui/data-table"
 import CreateAlertDialog from "./create"
 import { Button } from "@/components/ui/button"
 import useFlashMessages from "@/hooks/use-flash-messages"
-import { Alert, CreateAlertColumns } from "@/components/ui/column-alerts"
-import { Plus } from "lucide-react"
+import { Alert, CreateAlertColumns, Hazard, Regulation } from "@/components/ui/column-alerts"
+import { Edit, Plus } from "lucide-react"
+import React from "react"
+import BulkEditAlertsDialog from "./bulk-edit"
 
 export default function Index({
   alerts,
@@ -31,6 +33,7 @@ export default function Index({
   plantTypes = [],
   plantMakes = [],
   plantModels = [],
+  hazards = [],
 }: {
   alerts: Alert[],
   sources: Source[],
@@ -40,9 +43,13 @@ export default function Index({
   plantTypes: PlantType[],
   plantMakes: PlantMake[],
   plantModels: PlantModel[],
+  hazards: Hazard[],
 }) {
 
   useFlashMessages();
+
+  const [selectedRows, setSelectedRows] = React.useState<Alert[]>([]);
+  const [bulkEditOpen, setBulkEditOpen] = React.useState(false);
 
   const alertColumns = CreateAlertColumns(
     sources,
@@ -51,7 +58,9 @@ export default function Index({
     sites,
     plantTypes,
     plantMakes,
-    plantModels
+    plantModels,
+    hazards,
+    true,
   );
 
   const alertExportColumns = [
@@ -74,8 +83,50 @@ export default function Index({
     { header: "Plant Type", accessor: "plant_type.name" },
     { header: "Plant Make", accessor: "plant_make.name" },
     { header: "Plant Model", accessor: "plant_model.name" },
-    { header: "Hazards", accessor: "hazards" },
+    {
+      header: "Hazard",
+      accessor: "hazards",
+      cell: (hazards: Hazard[]) => hazards?.map((hazard) => `${hazard.name}`).join("; ") || "No hazards provided",
+    },
   ];
+
+  const handleBulkEdit = () => {
+    if (selectedRows.length > 0) {
+      const selectedIds = selectedRows.map((alert) => alert.id)
+      router.visit(route('alerts.bulk-edit'), {
+        data: { ids: selectedIds },
+      });
+    }
+  }
+
+  const customActions = (
+    <div className="flex gap-2">
+      {selectedRows.length > 0 && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleBulkEdit}
+        >
+          <Edit className="h-4 w-4 mr-2" />
+          Edit Selected ({selectedRows.length})
+        </Button>
+      )}
+      <CreateAlertDialog
+        sources={sources}
+        regulations={regulations}
+        sites={sites}
+        plantTypes={plantTypes}
+        plantMakes={plantMakes}
+        plantModels={plantModels}
+        hazards={hazards}
+      >
+        <Button size="sm">
+          <Plus />
+          Add new item
+        </Button>
+      </CreateAlertDialog>
+    </div >
+  );
 
   return (
     <>
@@ -107,20 +158,6 @@ export default function Index({
           </header>
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
             <div className="min-h-[100vh] flex-1 md:min-h-min">
-              <CreateAlertDialog
-                sources={sources}
-                regulations={regulations}
-                organizations={organizations}
-                sites={sites}
-                plantTypes={plantTypes}
-                plantMakes={plantMakes}
-                plantModels={plantModels}
-              >
-                <Button className="mt-2">
-                  <Plus />
-                  Add new item
-                </Button>
-              </CreateAlertDialog>
               <DataTable
                 columns={alertColumns}
                 data={alerts}
@@ -129,6 +166,9 @@ export default function Index({
                 exportColumns={alertExportColumns}
                 exportFilename={`${new Date().toLocaleString()}-alerts-export`}
                 exportTitle="Industry Alert Report"
+                enableRowSelection={true}
+                onRowSelectionChange={setSelectedRows}
+                customActions={customActions}
               />
             </div>
           </div>
