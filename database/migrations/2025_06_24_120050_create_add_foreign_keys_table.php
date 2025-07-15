@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::table('industry_alerts', function (Blueprint $table) {
             $table->foreignUuid('source_id')->after('number')->references('id')->on('sources');
-            $table->foreignUuid('regulation_id')->after('hyperlink_url')->references('id')->on('regulations');
             $table->foreignUuid('organization_id')->after('regulation_id')->references('id')->on('organizations');
             $table->foreignUuid('site_id')->after('organization_id')->references('id')->on('sites');
             $table->foreignUuid('plant_type_id')->after('site_id')->references('id')->on('plant_types');
@@ -37,7 +36,6 @@ return new class extends Migration
     {
         Schema::table('industry_alerts', function (Blueprint $table) {
             $table->dropForeign(['source_id']);
-            $table->dropForeign(['regulation_id']);
             $table->dropForeign(['organization_id']);
             $table->dropForeign(['site_id']);
             $table->dropForeign(['plant_type_id']);

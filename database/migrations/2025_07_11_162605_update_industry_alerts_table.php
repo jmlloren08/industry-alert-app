@@ -13,8 +13,6 @@ return new class extends Migration
     {
         Schema::table('industry_alerts', function (Blueprint $table) {
             // Add new columns
-            $table->string('hyperlink_text')->nullable()->after('description');
-            $table->string('hyperlink_url')->nullable()->after('hyperlink_text');
             $table->uuid('organization_id')->nullable()->after('hyperlink_url');
             $table->uuid('site_id')->nullable()->after('organization_id');
             $table->uuid('type_id')->nullable()->after('site_id');
@@ -35,6 +33,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::table('industry_alerts', function (Blueprint $table) {
+            $table->dropForeign(['organization_id']);
+            $table->dropForeign(['site_id']);
+            $table->dropForeign(['type_id']);
+            $table->dropForeign(['make_id']);
+            $table->dropForeign(['model_id']);
+        });
     }
 };
