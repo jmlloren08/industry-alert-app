@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useForm } from "@inertiajs/react"
 import { AlertTriangle } from "lucide-react"
+import Swal from "sweetalert2"
 
 interface DeleteConfirmationDialogProps {
     children: React.ReactNode
@@ -28,6 +29,18 @@ export default function DeleteConfirmationDialog({
     const { delete: destroy, processing } = useForm();
 
     const handleDelete = () => {
+        // Show a loading alert while processing
+        Swal.fire({
+            title: 'Processing...',
+            html: 'Please wait while we process your request',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        // Perform the delete operation
         destroy(deleteUrl, {
             preserveScroll: true,
             onSuccess: () => {

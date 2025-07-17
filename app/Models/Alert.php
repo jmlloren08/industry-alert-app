@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 
 class Alert extends Model
 {
@@ -28,7 +29,15 @@ class Alert extends Model
         'type_id',
         'make_id',
         'model_id',
-        'hazards',
+        'is_new',
+        'is_reviewed',
+        'reviewed_by',
+        'reviewed_at',
+    ];
+
+    protected $casts = [
+        'is_new' => 'boolean',
+        'is_reviewed' => 'boolean',
     ];
 
     public function source()
@@ -69,5 +78,36 @@ class Alert extends Model
     public function hazards()
     {
         return $this->belongsToMany(Hazard::class, 'alerts_hazards', 'alert_id', 'hazard_id');
+    }
+
+    public function reviewer()
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    // Helper methods for review workflow
+    public function markAsReviewed($userId = null)
+    {
+        $this->update([
+            'is_new' => false,
+            'is_reviewed' => true,
+            'reviewed_by' => $userId ?? Auth::id(),
+            'reviewed_at' => now(),
+        ]);
+    }
+
+    public function hasMissingRegulations()
+    {
+        return $this->regulations()->count() === 0;
+    }
+
+    public function hasMissingHazards()
+    {
+        return $this->hazards()->count() === 0;
+    }
+
+    public function hasIncompleteData()
+    {
+        return $this->hasMissingRegulations() || $this->hasMissingHazards();
     }
 }

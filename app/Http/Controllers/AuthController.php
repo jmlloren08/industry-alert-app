@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Validation\Rules;
 
 class AuthController extends Controller
 {
@@ -87,7 +88,7 @@ class AuthController extends Controller
     public function setupPassword(Request $request)
     {
         $request->validate([
-            'password' => 'required|string|min:8|confirmed',
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $userId = session('pending_sso_user_id');

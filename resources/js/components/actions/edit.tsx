@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { ComboBoxList } from "../ui/combo-box"
 import { PlantMake, PlantType } from "../ui/column"
+import Swal from "sweetalert2"
 
 interface EditActionDialogProps {
     children: React.ReactNode
@@ -59,7 +60,18 @@ export default function EditActionDialog({
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-
+        // Show a loading alert while processing
+        Swal.fire({
+            title: 'Processing...',
+            html: 'Please wait while we process your request',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        // Perform the update operation
         put(route(editUrl, editData.id), {
             preserveScroll: true,
             onSuccess: () => {

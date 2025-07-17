@@ -13,7 +13,9 @@ use App\Http\Controllers\SiteController;
 use App\Http\Controllers\SourceController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
+use App\Services\GraphMailService;
 
 Route::get('/auth/redirect', [AuthController::class, 'redirectToMicrosoft'])->name('microsoft.login');
 Route::get('/auth/callback', [AuthController::class, 'handleMicrosoftCallback'])->name('microsoft.callback');
@@ -31,11 +33,25 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
+    // Test email
+    Route::get('/send-graph-email', function (GraphMailService $mailer) {
+
+        $accessToken = config('services.microsoft.client_secret');
+        $fromEmail = 'support@raioneng.com.au';
+        $toEmail = 'jaymarvinc.lloren@gmail.com';
+        $subject = 'Test Email from Industry Alert App';
+        $bodyText = 'This is a test email sent using Microsoft Graph API.';
+
+        $mailer->sendMail($accessToken, $fromEmail, $toEmail, $subject, $bodyText);
+
+        return 'Email sent successfully!';
+    });
+
     Route::get('/auth/verified/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/auth/verified/dashboard/metrics', [DashboardController::class, 'getMetrics']);
     Route::get('/auth/verified/dashboard/alerts-over-time', [DashboardController::class, 'getAlertsOverTime']);
     Route::get('/auth/verified/dashboard/recent-alerts', [DashboardController::class, 'getRecentAlerts']);
-    Route::get('/auth/verified/dashboard/alerts-by-source',[DashboardController::class, 'getAlertsBySource']);
+    Route::get('/auth/verified/dashboard/alerts-by-source', [DashboardController::class, 'getAlertsBySource']);
     Route::get('/auth/verified/dashboard/alerts-by-regulation', [DashboardController::class, 'getAlertsByRegulation']);
     Route::get('/auth/verified/dashboard/alerts-by-organization', [DashboardController::class, 'getAlertsByOrganization']);
     Route::get('/auth/verified/dashboard/alerts-by-site', [DashboardController::class, 'getAlertsBySite']);
@@ -52,8 +68,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/auth/verified/alerts/bulk-edit', [AlertController::class, 'bulkEdit'])->name('alerts.bulk-edit');
     Route::post('/auth/verified/alerts/bulk-update', [AlertController::class, 'bulkUpdate'])->name('alerts.bulk-update');
+    Route::delete('/auth/verified/alerts/bulk-delete', [AlertController::class, 'bulkDelete'])->name('alerts.bulk-delete');
+    Route::patch('/auth/verified/alerts/{alert}/mark-reviewed', [AlertController::class, 'markAsReviewed'])->name('alerts.mark-reviewed');
+    Route::get('/auth/verified/alerts/review-metrics', [AlertController::class, 'getReviewMetrics'])->name('alerts.review-metrics');
     Route::resource('/auth/verified/alerts', AlertController::class);
-    
+
     Route::resource('/auth/verified/sources', SourceController::class);
     Route::resource('/auth/verified/regulations', RegulationController::class);
     Route::resource('/auth/verified/organizations', OrganizationController::class);

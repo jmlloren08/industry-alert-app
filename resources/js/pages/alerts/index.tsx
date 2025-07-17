@@ -13,16 +13,20 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Head, router } from "@inertiajs/react"
+import { Head, router, usePage } from "@inertiajs/react"
 import { Source, Organization, Site, PlantType, PlantMake, PlantModel } from "../../components/ui/column"
 import { DataTable } from "../../components/ui/data-table"
 import CreateAlertDialog from "./create"
 import { Button } from "@/components/ui/button"
 import useFlashMessages from "@/hooks/use-flash-messages"
 import { Alert, CreateAlertColumns, Hazard, Regulation } from "@/components/ui/column-alerts"
-import { Edit, Plus } from "lucide-react"
-import React from "react"
+import { AlertTriangle, BellPlus, CheckCircle, Edit, Plus, Trash2 } from "lucide-react"
+import React, { useEffect } from "react"
 import BulkEditAlertsDialog from "./bulk-edit"
+import BulkDeleteAlertsDialog from "./bulk-delete"
+import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 export default function Index({
   alerts,
@@ -49,7 +53,28 @@ export default function Index({
   useFlashMessages();
 
   const [selectedRows, setSelectedRows] = React.useState<Alert[]>([]);
-  const [bulkEditOpen, setBulkEditOpen] = React.useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = React.useState(false);
+  const [showNewOnly, setShowNewOnly] = React.useState(false);
+
+  // Sort alerts to ensure newest/most recently updated are at the top
+  const sortedAlerts = React.useMemo(() => {
+    return [...alerts].sort((a, b) => {
+      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+    });
+  }, [alerts]);
+
+  // Filters alerts based on the toggle
+  const filteredAlerts = React.useMemo(() => {
+    if (showNewOnly) {
+      return sortedAlerts.filter((alert) => alert.is_new);
+    }
+    return alerts;
+  }, [alerts, showNewOnly]);
+
+  // Calculate metrics
+  const newAlertsCount = filteredAlerts.filter((alert) => alert.is_new).length;
+  const reviewedAlertsCount = filteredAlerts.filter((alert) => alert.is_reviewed).length;
+  const incompleteDataCount = filteredAlerts.filter((alert) => !alert.regulations?.length || !alert.hazards?.length).length;
 
   const alertColumns = CreateAlertColumns(
     sources,
@@ -62,6 +87,29 @@ export default function Index({
     hazards,
     true,
   );
+
+  const handleToggleNewOnly = (checked: boolean) => {
+    setShowNewOnly(checked);
+  }
+
+  const handleBulkEdit = () => {
+    if (selectedRows.length > 0) {
+      const selectedIds = selectedRows.map((alert) => alert.id)
+      router.visit(route('alerts.bulk-edit'), {
+        data: { ids: selectedIds },
+      });
+    }
+  }
+
+  const handleBulkDelete = () => {
+    if (selectedRows.length > 0) {
+      setBulkDeleteOpen(true);
+    }
+  }
+
+  const handleDeleteComplete = () => {
+    setSelectedRows([]);
+  }
 
   const alertExportColumns = [
     { header: "Number", accessor: "number" },
@@ -88,32 +136,39 @@ export default function Index({
       accessor: "hazards",
       cell: (hazards: Hazard[]) => hazards?.map((hazard) => `${hazard.name}`).join("; ") || "No hazards provided",
     },
+    {
+      header: 'Review Status',
+      accessor: 'is_reviewed',
+      cell: (value: boolean) => value ? 'Reviewed' : 'Not Reviewed',
+    },
   ];
-
-  const handleBulkEdit = () => {
-    if (selectedRows.length > 0) {
-      const selectedIds = selectedRows.map((alert) => alert.id)
-      router.visit(route('alerts.bulk-edit'), {
-        data: { ids: selectedIds },
-      });
-    }
-  }
 
   const customActions = (
     <div className="flex gap-2">
       {selectedRows.length > 0 && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleBulkEdit}
-        >
-          <Edit className="h-4 w-4 mr-2" />
-          Edit Selected ({selectedRows.length})
-        </Button>
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBulkEdit}
+          >
+            <Edit />
+            Edit Selected ({selectedRows.length})
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleBulkDelete}
+          >
+            <Trash2 />
+            Delete Selected ({selectedRows.length})
+          </Button>
+        </>
       )}
       <CreateAlertDialog
         sources={sources}
         regulations={regulations}
+        organizations={organizations}
         sites={sites}
         plantTypes={plantTypes}
         plantMakes={plantMakes}
@@ -157,10 +212,66 @@ export default function Index({
             </div>
           </header>
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <div className="min-h-[100vh] flex-1 md:min-h-min">
+            {/* Review Metrics Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+
+              <div className="bg-red-50 p-4 rounded-lg border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-red-600">New Alerts</p>
+                    <p className="text-2xl font-bold text-red-900">{newAlertsCount}</p>
+                  </div>
+                  <BellPlus className="text-red-500" />
+                </div>
+              </div>
+
+              <div className="bg-green-50 p-4 rounded-lg border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-green-600">Reviewed Alerts</p>
+                    <p className="text-2xl font-bold text-green-900">{reviewedAlertsCount}</p>
+                  </div>
+                  <CheckCircle className="text-green-500" />
+                </div>
+              </div>
+
+              <div className="bg-amber-50 p-4 rounded-lg border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-amber-600">Incomplete Data</p>
+                    <p className="text-2xl font-bold text-amber-900">{incompleteDataCount}</p>
+                  </div>
+                  <AlertTriangle className="text-amber-500" />
+                </div>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Alerts</p>
+                    <p className="text-2xl font-bold text-gray-900">{alerts.length}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Filters Controls */}
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="show-new-only"
+                checked={showNewOnly}
+                onCheckedChange={handleToggleNewOnly}
+              />
+              {showNewOnly ? (
+                <Label htmlFor="show-new-only">Show all</Label>
+              ) : (
+                <Label htmlFor="show-new-only">Show new alerts only</Label>
+              )}
+            </div>
+            <div>
               <DataTable
                 columns={alertColumns}
-                data={alerts}
+                data={filteredAlerts}
                 filterValue1="number"
                 filterValue2="description"
                 exportColumns={alertExportColumns}
@@ -173,7 +284,15 @@ export default function Index({
             </div>
           </div>
         </SidebarInset>
-      </SidebarProvider>
+      </SidebarProvider >
+
+      {/* Bulk Delete Dialog */}
+      < BulkDeleteAlertsDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        selectedAlerts={selectedRows}
+        onDeleteComplete={handleDeleteComplete}
+      />
     </>
   );
 }

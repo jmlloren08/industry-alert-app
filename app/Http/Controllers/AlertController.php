@@ -21,12 +21,12 @@ class AlertController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
 
-            $alerts = Alert::with(['source', 'regulations', 'organization', 'site', 'plantType', 'plantMake', 'plantModel', 'hazards'])
-                ->latest()
+            $alerts = Alert::with(['source', 'regulations', 'organization', 'site', 'plantType', 'plantMake', 'plantModel', 'hazards', 'reviewer'])
+                ->orderBy('updated_at', 'desc')
                 ->get();
 
             $sources = Source::where('is_active', true)
@@ -330,6 +330,43 @@ class AlertController extends Controller
         }
     }
 
+    public function builkDelete(Request $request)
+    {
+        try {
+            $ids = $request->input('ids', []);
+
+            if (empty($ids)) {
+                return redirect()->back()->with('error', 'No alerts selected for deletion.');
+            }
+
+            // Validate that all IDs exist
+            $alerts = Alert::whereIn('id', $ids)->get();
+
+            if ($alerts->count() !== count($ids)) {
+                return redirect()->back()->with('error', 'Some selected alerts do not exist.');
+            }
+
+            DB::beginTransaction();
+
+            // Delete alerts
+            foreach ($alerts as $alert) {
+                // Detach relationships before deletion
+                $alert->regulations()->detach();
+                $alert->hazards()->detach();
+                $alert->delete();
+            }
+
+            DB::commit();
+
+            $count = count($ids);
+
+            return redirect()->route('alerts.index')->with('success', "Successfully deleted $count alert(s).");
+        } catch (\Exception $e) {
+            Log::error('Error bulk deleting alerts: ' . $e->getMessage());
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
     /**
      * Remove the specified resource from storage.
      */
@@ -342,6 +379,25 @@ class AlertController extends Controller
         } catch (\Exception $e) {
             Log::error('Error deleting alert: ' . $e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function markAsReviewed(Alert $alert)
+    {
+        try {
+            $alert->markAsReviewed();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Alert marked as reviewed successfully.',
+                'alert' => $alert->load(['reviewer'])
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error marking alert as reviewed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error marking alert as reviewed: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

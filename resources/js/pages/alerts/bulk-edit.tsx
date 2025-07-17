@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Textarea } from "@/components/ui/textarea";
-import { Head, router, useForm } from "@inertiajs/react";
+import { Head, Link, router, useForm } from "@inertiajs/react";
 import React, { useEffect, useState } from "react";
 import Select from "react-select";
 import Swal from "sweetalert2";
@@ -61,6 +61,55 @@ export default function BulkEdit({
         }))
     });
 
+    // Initialize available plant makes and models for each alerts
+    useEffect(() => {
+        const makesByAlert: { [key: number]: PlantMake[] } = {};
+        const modelsByAlert: { [key: number]: PlantModel[] } = {};
+
+        data.alerts.forEach((alert, index) => {
+            if (alert.type_id) {
+                makesByAlert[index] = plantMakes.filter((make) => make.type_id === alert.type_id);
+            }
+            if (alert.make_id) {
+                modelsByAlert[index] = plantModels.filter((model) => model.make_id === alert.make_id);
+            }
+        });
+        setAvailablePlantMakes(makesByAlert);
+        setAvailablePlantModels(modelsByAlert);
+        setLoading(false);
+    }, [data.alerts, plantMakes, plantModels]);
+
+    const sourceOptions = sources.map((source) => ({
+        value: source.id,
+        label: source.name,
+    })) || [];
+
+    const regulationOptions = regulations.map((regulation) => ({
+        value: regulation.id,
+        label: regulation.section,
+    })) || [];
+
+    const organizationOptions = organizations.map((organization) => ({
+        value: organization.id,
+        label: organization.name,
+    })) || [];
+
+    const siteOptions = sites.map((site) => ({
+        value: site.id,
+        label: site.name,
+    })) || [];
+
+    const plantTypeOptions = plantTypes.map((plantType) => ({
+        value: plantType.id,
+        label: plantType.name,
+        description: plantType.description,
+    })) || [];
+
+    const hazardOptions = hazards.map((hazard) => ({
+        value: hazard.id,
+        label: hazard.name,
+    })) || [];
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         // Show a loading alert while processing
@@ -84,29 +133,25 @@ export default function BulkEdit({
         setData('alerts', updatedAlerts);
     }
 
-    const handleCancel = () => {
-        router.visit(route('alerts.index'));
-    }
-
-    // Initialize available plant makes and models for each alerts
-    useEffect(() => {
-        const makesByAlert: { [key: number]: PlantMake[] } = {};
-        const modelsByAlert: { [key: number]: PlantModel[] } = {};
-
-        data.alerts.forEach((alert, index) => {
-            if (alert.type_id) {
-                makesByAlert[index] = plantMakes.filter((make) => make.type_id === alert.type_id);
-            }
-            if (alert.make_id) {
-                modelsByAlert[index] = plantModels.filter((model) => model.make_id === alert.make_id);
-            }
-        });
-        setAvailablePlantMakes(makesByAlert);
-        setAvailablePlantModels(modelsByAlert);
-    }, []);
-
     // Handle plant type change
     const handlePlantTypeChange = (index: number, typeId: string) => {
+
+        if (!typeId) {
+            setAvailablePlantMakes((prev) => ({
+                ...prev,
+                [index]: [],
+            }));
+
+            setAvailablePlantModels((prev) => ({
+                ...prev,
+                [index]: [],
+            }));
+
+            updateAlert(index, 'type_id', '');
+            updateAlert(index, 'make_id', '');
+            updateAlert(index, 'model_id', '');
+            return;
+        }
         const filteredMakes = plantMakes.filter((make) => make.type_id === typeId);
 
         setAvailablePlantMakes((prev) => ({
@@ -126,6 +171,15 @@ export default function BulkEdit({
 
     // Handle plant make change
     const handlePlantMakeChange = (index: number, makeId: string) => {
+        if(!makeId){
+            setAvailablePlantModels((prev) => ({
+                ...prev,
+                [index]: [],
+            }));
+            updateAlert(index, 'make_id', '');
+            updateAlert(index, 'model_id', '');
+            return;
+        }
         const filteredModels = plantModels.filter((model) => model.make_id === makeId);
 
         setAvailablePlantModels((prev) => ({
@@ -160,40 +214,11 @@ export default function BulkEdit({
         }),
     };
 
-    const sourceOptions = sources.map((source) => ({
-        value: source.id,
-        label: source.name,
-    })) || [];
 
-    const regulationOptions = regulations.map((regulation) => ({
-        value: regulation.id,
-        label: regulation.section,
-    })) || [];
-
-    const organizationOptions = organizations.map((organization) => ({
-        value: organization.id,
-        label: organization.name,
-    })) || [];
-
-    const siteOptions = sites.map((site) => ({
-        value: site.id,
-        label: site.name,
-    })) || [];
-
-    const plantTypeOptions = plantTypes.map((plantType) => ({
-        value: plantType.id,
-        label: plantType.name,
-        description: plantType.description,
-    })) || [];
-
-    const hazardOptions = hazards.map((hazard) => ({
-        value: hazard.id,
-        label: hazard.name,
-    })) || [];
 
     return (
         <>
-            <Head title="Bulk Edit Alerts" />\
+            <Head title="Bulk Edit Alerts" />
             <SidebarProvider>
                 <AppSidebar />
                 <SidebarInset>
@@ -230,9 +255,11 @@ export default function BulkEdit({
                         <div className="flex items-center justify-between">
                             <h1 className="text-2xl font-bold">Bulk Edit Alerts</h1>
                             <div className="flex gap-2">
-                                <Button variant="outline" onClick={handleCancel}>
-                                    Cancel
-                                </Button>
+                                <Link href={route('alerts.index')}>
+                                    <Button variant="outline">
+                                        Cancel
+                                    </Button>
+                                </Link>
                                 <Button onClick={handleSubmit} disabled={processing}>
                                     {processing ? 'Saving...' : 'Save Changes'}
                                 </Button>
@@ -242,6 +269,10 @@ export default function BulkEdit({
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {data.alerts.map((alert, index) => {
+
+                            if (loading) {
+                                return <div key={alert.id}>Loading...</div>;
+                            }
 
                             const plantMakeOptions = (availablePlantMakes[index] || []).map((plantMake) => ({
                                 value: plantMake.id,
@@ -259,7 +290,7 @@ export default function BulkEdit({
                                 <div className="p-2" key={alert.id}>
                                     <Card key={alert.id}>
                                         <CardHeader>
-                                            <CardTitle><Badge variant="secondary">Item number: {index + 1}</Badge></CardTitle>
+                                            <CardTitle><Badge variant="secondary">Item #: {index + 1}</Badge></CardTitle>
                                         </CardHeader>
                                         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>

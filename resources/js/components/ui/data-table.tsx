@@ -19,12 +19,12 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Button } from "./button"
 import React, { useEffect } from "react"
 import { Input } from "./input"
 import { DataTablePagination } from "./pagination-controls"
 import { ExportColumn } from "../exports/export-to"
 import { DataTableToolbar } from "../exports/data-table-toolbar"
+import { cn } from "@/lib/utils"
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
@@ -92,7 +92,7 @@ export function DataTable<TData, TValue>({
     // const exportData = data;
 
     return (
-        <div className="mt-2">
+        <>
             {/* filter sections / descriptions */}
             <div className="flex items-center py-4 gap-2 border-t border-t-gray-200 border-b border-b-gray-200">
                 {/* Custom Actions */}
@@ -128,14 +128,22 @@ export function DataTable<TData, TValue>({
                 />
             </div>
             {/* Table */}
-            <div>
+            <div className="overflow-x-auto max-h-[calc(100vh-300px)] overflow-y-auto">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => {
+                                {headerGroup.headers.map((header, idx) => {
                                     return (
-                                        <TableHead key={header.id}>
+                                        <TableHead
+                                            key={header.id}
+                                            className={cn(
+                                                "bg-white",
+                                                idx < 3 && "sticky left-0 z-50",
+                                                idx === 1  && "left-[24px]",
+                                                idx === 2 && "left-[70px]",
+                                            )}
+                                        >
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(
@@ -155,11 +163,20 @@ export function DataTable<TData, TValue>({
                                     key={row.id}
                                     data-state={row.getIsSelected() && "selected"}
                                 >
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </TableCell>
-                                    ))}
+                                    {row.getVisibleCells().map((cell, idx) => {
+                                        return (
+                                            <TableCell
+                                                key={cell.id}
+                                                className={cn(
+                                                    idx < 3 && "sticky left-0 z-10 bg-white",
+                                                    idx === 1 && "left-[24px]",
+                                                    idx === 2 && "left-[70px]",
+                                                )}
+                                            >
+                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                            </TableCell>
+                                        );
+                                    })}
                                 </TableRow>
                             ))
                         ) : (
@@ -177,6 +194,6 @@ export function DataTable<TData, TValue>({
             <div className="flex items-center justify-end space-x-2 py-4">
                 <DataTablePagination table={table} />
             </div>
-        </div >
+        </>
     );
 }

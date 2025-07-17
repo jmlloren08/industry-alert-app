@@ -42,4 +42,9 @@ return [
         'tenant' => env('MICROSOFT_TENANT_ID'),
     ],
 
+    'mailer' => [
+        'address' => env('MAIL_FROM_ADDRESS'),
+        'name' => env('MAIL_FROM_NAME'),
+    ],
+
 ];

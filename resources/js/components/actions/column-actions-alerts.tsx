@@ -1,4 +1,4 @@
-import { DeleteIcon, EditIcon, EyeIcon, MoreHorizontal } from "lucide-react";
+import { AlertTriangle, Check, CheckCircle, CircleCheck, DeleteIcon, EditIcon, EyeIcon, MoreHorizontal } from "lucide-react";
 import { Button } from "../ui/button";
 import { Alert, Hazard, Regulation } from "../ui/column-alerts";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
@@ -7,6 +7,11 @@ import ShowAlertsDialog from "./show-alerts";
 import EditAlertsDialog from "./edit-alerts";
 import DeleteAlertsDialog from "./delete-alerts";
 import { Organization, PlantMake, PlantModel, PlantType, Site, Source } from "../ui/column";
+import { toast } from "sonner";
+import { Badge } from "../ui/badge";
+import axios from "axios";
+import { router } from "@inertiajs/react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 
 interface ColumnActionsAlertsProps {
     data: Alert
@@ -44,6 +49,34 @@ export default function ColumnActionsAlerts({
     const [editDialog, setEditDialog] = React.useState(false);
     const [deleteDialog, setDeleteDialog] = React.useState(false);
     const [dropdownOpen, setDropdownOpen] = React.useState(false);
+    const [isMarkingReviewed, setIsMarkingReviewed] = React.useState(false);
+
+    const handleMarkAsReviewed = async () => {
+        if (data.is_reviewed) {
+            toast.info("Alert is already marked as reviewed.");
+            return
+        }
+
+        setIsMarkingReviewed(true);
+
+        try {
+            const response = await axios.patch(route('alerts.mark-reviewed', data.id));
+            const result = await response.data;
+            if (result.success) {
+                toast.success(result.message || "Alert marked as reviewed successfully.");
+                router.reload({ only: ['alerts'] });
+            } else {
+                toast.error(result.message || "Failed to mark alert as reviewed.");
+            }
+        } catch (error) {
+            console.error('Error marking alert as reviewed: ', error);
+            toast.error("Failed to mark alert as reviewed.");
+        } finally {
+            setIsMarkingReviewed(false);
+        }
+    }
+
+    const hasMissingData = !data.regulations?.length || !data.hazards?.length
 
     const handleViewClick = () => {
         setDropdownOpen(false);
@@ -61,68 +94,32 @@ export default function ColumnActionsAlerts({
     }
 
     return (
-        <>
-            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleViewClick}>
-                        <EyeIcon />
-                        View
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleEditClick}>
-                        <EditIcon />
-                        Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        onClick={handleDeleteClick}
-                        variant="destructive"
-                    >
-                        <DeleteIcon />
-                        Delete
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Show Dialog */}
-            <ShowAlertsDialog
-                open={showDialog}
-                onOpenChange={setShowDialog}
-                data={data}
-            />
-            {/* Edit Dialog */}
-            <EditAlertsDialog
-                editData={data}
-                editUrl={editUrl}
-                editTitle={dialogTitle}
-                editDescription={dialogDescription}
-                open={editDialog}
-                onOpenChange={setEditDialog}
-                sources={sources}
-                regulations={regulations}
-                organizations={organizations}
-                sites={sites}
-                plantTypes={plantTypes}
-                plantMakes={plantMakes}
-                plantModels={plantModels}
-                hazards={hazards}
-            />
-            {/* Delete Dialog */}
-            <DeleteAlertsDialog
-                open={deleteDialog}
-                onOpenChange={setDeleteDialog}
-                title={`Delete ${dialogTitle}`}
-                description={`Are you sure you want to delete this ${dialogDescription}? This action cannot be undone.`}
-                deleteUrl={route(deleteUrl, data.id)}
-                itemName={data.number}
-                itemDescription={data.description}
-            />
-        </>
+        <div className="flex items-center gap-2">
+            {/* Review Status Check Icon */}
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`h-8 w-8 p-0 ${data.is_reviewed ? 'text-green-600 hover:text-green-700' : 'text-gray-400 hover:text-gray-600'}`}
+                            onClick={handleMarkAsReviewed}
+                            disabled={isMarkingReviewed}
+                        >
+                            <CircleCheck className={`h-4 w-4 ${data.is_reviewed ? 'bg-gree-600 text-green-600' : ''}`} />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="shadow-sm">
+                        {data.is_reviewed ? (
+                            <div className="text-xs">
+                                <p>Alert entry reviewed by {data.reviewer?.name} on {data.reviewed_at && new Date(data.reviewed_at).toLocaleDateString('en-AU')}</p>
+                            </div>
+                        ) : (
+                            <p className="text-xs">Click to mark as reviewed</p>
+                        )}
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        </div >
     );
 };

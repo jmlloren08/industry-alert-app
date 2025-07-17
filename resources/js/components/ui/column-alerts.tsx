@@ -1,9 +1,9 @@
 import { ColumnDef } from "@tanstack/react-table"
 import ColumnActionsAlerts from "../actions/column-actions-alerts"
 import { Badge } from "./badge"
-import { Organization, PlantMake, PlantModel, PlantType, Site, Source } from "./column"
+import { Source, Organization, Site, PlantMake, PlantModel, PlantType, } from "./column"
 import { Button } from "./button"
-import { ArrowUpDown } from "lucide-react"
+import { AlertTriangle, ArrowUpDown, Check, CheckCheck, Circle } from "lucide-react"
 import { Checkbox } from "./checkbox"
 
 export type Alert = {
@@ -12,7 +12,6 @@ export type Alert = {
     source?: Source
     incident_date: string
     description: string
-    hyperlink_text?: string
     hyperlink_url?: string
 
     regulation_ids?: string[]
@@ -26,6 +25,16 @@ export type Alert = {
 
     hazard_ids?: string[]
     hazards?: Hazard[]
+
+    is_new: boolean
+    is_reviewed: boolean
+    reviewed_by?: string
+    reviewed_at?: Date
+    reviewer?: {
+        id: string
+        name: string
+        email: string
+    }
 
     created_at: Date
     updated_at: Date
@@ -87,6 +96,7 @@ export const CreateAlertColumns = (
             }
         );
     }
+
     // Action column
     columns.push(
         {
@@ -339,7 +349,35 @@ export const CreateAlertColumns = (
                     </div>
                 )
             },
-        }
+        },
+        {
+            accessorKey: "status",
+            header: "Status",
+            cell: ({ row }) => {
+                const alert = row.original;
+                const hasMissingData = !alert.regulations?.length || !alert.hazards?.length;
+                return (
+                    <div className="flex items-center gap-1">
+                        {alert.is_reviewed && !hasMissingData && (
+                            <div className="flex items-center text-xs text-green-600" title="Vetted">
+                                <CheckCheck />
+                            </div>
+                        )}
+                        {!alert.is_reviewed && !hasMissingData && (
+                            <div className="flex items-center text-xs text-green-600" title="Data complete">
+                                <Check />
+                            </div>
+                        )}
+                        {hasMissingData && (
+                            <div className="flex items-center text-xs text-amber-600" title="Missing data">
+                                <AlertTriangle />
+                            </div>
+                        )}
+                    </div>
+                );
+            },
+        },
     );
+
     return columns;
 };

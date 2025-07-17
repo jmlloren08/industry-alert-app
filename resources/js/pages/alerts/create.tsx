@@ -17,6 +17,7 @@ import { Organization, PlantMake, PlantModel, PlantType, Site, Source } from "@/
 import Select from 'react-select';
 import "react-datepicker/dist/react-datepicker.css";
 import { Hazard, Regulation } from "@/components/ui/column-alerts";
+import Swal from "sweetalert2";
 
 interface CreateAlertDialogProps {
     children: React.ReactNode,
@@ -129,7 +130,18 @@ export default function CreateAlertDialog({
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-
+        // Show a loading alert while processing
+        Swal.fire({
+            title: 'Processing...',
+            html: 'Please wait while we process your request',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        // Post the form data
         post(route('alerts.store'), {
             onSuccess: () => {
                 reset();
@@ -209,7 +221,7 @@ export default function CreateAlertDialog({
                             </Label>
                             <Select
                                 options={sourceOptions}
-                                value={sourceOptions.find(option => option.value === data.source_id) || null}
+                                value={sourceOptions.find((option) => option.value === data.source_id) || null}
                                 onChange={(selectedOption) => setData('source_id', selectedOption?.value || '')}
                                 placeholder="Select source..."
                                 isClearable
@@ -274,7 +286,7 @@ export default function CreateAlertDialog({
                             <Select
                                 isMulti
                                 options={regulationOptions}
-                                value={regulationOptions.filter(option => data.regulation_ids.includes(option.value))}
+                                value={regulationOptions.filter((option) => data.regulation_ids.includes(option.value))}
                                 onChange={(selectedOptions) => {
                                     const values = selectedOptions?.map(option => option.value) || [];
                                     setData('regulation_ids', values);
@@ -296,7 +308,7 @@ export default function CreateAlertDialog({
                             <Label htmlFor="organization_id">Organization</Label>
                             <Select
                                 options={organizationOptions}
-                                value={organizationOptions.find(option => option.value === data.organization_id) || null}
+                                value={organizationOptions.find((option) => option.value === data.organization_id) || null}
                                 onChange={(selectedOption) => setData('organization_id', selectedOption?.value || '')}
                                 placeholder="Select organization..."
                                 isClearable
@@ -312,7 +324,7 @@ export default function CreateAlertDialog({
                             <Label htmlFor="site_id">Site</Label>
                             <Select
                                 options={siteOptions}
-                                value={siteOptions.find(option => option.value === data.site_id) || null}
+                                value={siteOptions.find((option) => option.value === data.site_id) || null}
                                 onChange={(selectedOption) => setData('site_id', selectedOption?.value || '')}
                                 placeholder="Select site..."
                                 isClearable
@@ -328,7 +340,7 @@ export default function CreateAlertDialog({
                             <Label htmlFor="type_id">Equipment (Std)</Label>
                             <Select
                                 options={plantTypeOptions}
-                                value={plantTypeOptions.find(option => option.value === data.type_id) || null}
+                                value={plantTypeOptions.find((option) => option.value === data.type_id) || null}
                                 onChange={(selectedOption) => setData('type_id', selectedOption?.value || '')}
                                 placeholder="Select plant type..."
                                 isClearable
@@ -352,7 +364,7 @@ export default function CreateAlertDialog({
                             <Label htmlFor="make_id">Make (Std)</Label>
                             <Select
                                 options={plantMakeOptions}
-                                value={plantMakeOptions.find(option => option.value === data.make_id) || null}
+                                value={plantMakeOptions.find((option) => option.value === data.make_id) || null}
                                 onChange={(selectedOption) => setData('make_id', selectedOption?.value || '')}
                                 placeholder="Select plant make..."
                                 isClearable
@@ -376,7 +388,7 @@ export default function CreateAlertDialog({
                             <Label htmlFor="model_id">Model (Std)</Label>
                             <Select
                                 options={plantModelOptions}
-                                value={plantModelOptions.find(option => option.value === data.model_id) || null}
+                                value={plantModelOptions.find((option) => option.value === data.model_id) || null}
                                 onChange={(selectedOption) => setData('model_id', selectedOption?.value || '')}
                                 placeholder="Select plant model..."
                                 isClearable
