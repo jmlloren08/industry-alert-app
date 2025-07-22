@@ -53,13 +53,6 @@ class ImportAlertsFromCsv extends Command
             DB::beginTransaction();
 
             try {
-                // Skip if alert number already exists
-                $exists = Alert::where('number', $record['number'])->exists();
-                if ($exists) {
-                    $this->warn('⚠️ Alert number ' . $record['number'] . ' already exists. Skipping.');
-                    DB::rollBack();
-                    continue;
-                }
 
                 $alertId = (string) Str::uuid();
                 // Fetch FK IDs // Lookups
@@ -70,23 +63,11 @@ class ImportAlertsFromCsv extends Command
                 $plantMakeId = PlantMake::where('name', $record['make_id'])->where('type_id', $plantTypeId)->value('id');
                 $plantModelId = PlantModel::where('name', $record['model_id'])->where('make_id', $plantMakeId)->value('id');
 
-                // Validate required fields
-                if (!$sourceId || !$organizationId || !$siteId) {
-                    $this->warn('⚠️ Missing required foreign key for alert number ' . $record['number'] . '. Skipping.');
-                    DB::rollBack();
-                    continue;
-                }
-
                 $description  = $record['description'];
+
                 $description = str_replace(["\xA0", "\xC2\xA0"], ' ', $description);
                 $description = preg_replace('/[\s\p{Zs}\x{00a0}]+$/u', '', $description);
                 $description = trim($description);
-
-                if (empty($description)) {
-                    $this->warn('⚠️ Description is empty for alert number ' . $record['number'] . '. Skipping.');
-                    DB::rollBack();
-                    continue;
-                }
 
                 // Insert into alerts table
                 Alert::insert([

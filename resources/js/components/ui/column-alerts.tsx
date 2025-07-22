@@ -1,10 +1,10 @@
-import { ColumnDef } from "@tanstack/react-table"
+import { ColumnDef, FilterFn } from "@tanstack/react-table"
 import ColumnActionsAlerts from "../actions/column-actions-alerts"
 import { Badge } from "./badge"
 import { Source, Organization, Site, PlantMake, PlantModel, PlantType, } from "./column"
-import { Button } from "./button"
-import { AlertTriangle, ArrowUpDown, Check, CheckCheck, Circle } from "lucide-react"
+import { AlertTriangle, Check, CheckCheck } from "lucide-react"
 import { Checkbox } from "./checkbox"
+import { ColumnHeaderFilter } from "./column-header-filter"
 
 export type Alert = {
     id: string
@@ -58,16 +58,38 @@ export type Hazard = {
     updated_at: Date
 }
 
+const arrayIncludesFilter: FilterFn<Alert> = (row, columnId, value) => {
+    if (columnId === 'regulations') {
+        const regulations = row.original?.regulations || [];
+        return regulations.some((regulation) => regulation.section === value);
+    }
+    if (columnId === 'hazards') {
+        const hazards = row.original?.hazards || [];
+        return hazards.some((hazard) => hazard.name === value);
+    }
+    return false;
+}
+
+const statusFilter: FilterFn<Alert> = (row, columnId, value) => {
+    const alert = row.original;
+    const hasMissingData = !alert.regulations?.length || !alert.hazards?.length;
+
+    switch (value) {
+        case 'new':
+            return alert.is_new;
+        case 'reviewed':
+            return alert.is_reviewed && !hasMissingData;
+        case 'complete':
+            return !alert.is_reviewed && !hasMissingData;
+        case 'incomplete':
+            return hasMissingData;
+        default:
+            return true;
+    }
+}
 export const CreateAlertColumns = (
-    sources: Source[] = [],
-    regulations: Regulation[] = [],
-    organizations: Organization[] = [],
-    sites: Site[] = [],
-    plantTypes: PlantType[] = [],
-    plantMakes: PlantMake[] = [],
-    plantModels: PlantModel[] = [],
-    hazards: Hazard[] = [],
     enableSelection: boolean = false,
+    filterOptions: Record<string, any> = {},
 ): ColumnDef<Alert>[] => {
 
     const columns: ColumnDef<Alert>[] = [];
@@ -106,18 +128,6 @@ export const CreateAlertColumns = (
                 return (
                     <ColumnActionsAlerts
                         data={alert}
-                        editUrl="alerts.update"
-                        deleteUrl="alerts.destroy"
-                        dialogTitle="Alert"
-                        dialogDescription="alert"
-                        sources={sources}
-                        regulations={regulations}
-                        organizations={organizations}
-                        sites={sites}
-                        plantTypes={plantTypes}
-                        plantMakes={plantMakes}
-                        plantModels={plantModels}
-                        hazards={hazards}
                     />
                 );
             },
@@ -128,31 +138,23 @@ export const CreateAlertColumns = (
     columns.push(
         {
             accessorKey: "number",
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant='ghost'
-                        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-                    >
-                        Number
-                        <ArrowUpDown />
-                    </Button>
-                );
-            },
+            header: ({ column }) => (
+                <ColumnHeaderFilter
+                    column={column}
+                    title="Number"
+                    filterOptions={filterOptions['number'] || []}
+                />
+            ),
         },
         {
             accessorKey: "source.name",
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant='ghost'
-                        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-                    >
-                        Source
-                        <ArrowUpDown />
-                    </Button>
-                );
-            },
+            header: ({ column }) => (
+                <ColumnHeaderFilter
+                    column={column}
+                    title="Source"
+                    filterOptions={filterOptions['source.name'] || []}
+                />
+            ),
             cell: ({ row }) => {
                 return row.original.source?.name || (
                     <Badge variant='secondary'>No source provided</Badge>
@@ -161,17 +163,13 @@ export const CreateAlertColumns = (
         },
         {
             accessorKey: "incident_date",
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant='ghost'
-                        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-                    >
-                        Incident Date
-                        <ArrowUpDown />
-                    </Button>
-                );
-            },
+            header: ({ column }) => (
+                <ColumnHeaderFilter
+                    column={column}
+                    title="Incident Date"
+                    filterOptions={filterOptions['incident_date'] || []}
+                />
+            ),
             cell: ({ row }) => {
                 return new Date(row.original.incident_date).toLocaleDateString('en-AU')
             },
@@ -213,7 +211,14 @@ export const CreateAlertColumns = (
         },
         {
             accessorKey: "regulations",
-            header: "Regulations (Section - Description)",
+            header: ({ column }) => (
+                <ColumnHeaderFilter
+                    column={column}
+                    title="Regulations"
+                    filterOptions={filterOptions['regulations'] || []}
+                />
+            ),
+            filterFn: arrayIncludesFilter,
             cell: ({ row }) => {
                 const regulations = row.original.regulations || [];
                 return (
@@ -235,17 +240,13 @@ export const CreateAlertColumns = (
         },
         {
             accessorKey: "organization.name",
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant='ghost'
-                        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-                    >
-                        Organization
-                        <ArrowUpDown />
-                    </Button>
-                );
-            },
+            header: ({ column }) => (
+                <ColumnHeaderFilter
+                    column={column}
+                    title="Organization"
+                    filterOptions={filterOptions['organization.name'] || []}
+                />
+            ),
             cell: ({ row }) => {
                 return row.original.organization?.name || (
                     <Badge variant='secondary'>No organization provided</Badge >
@@ -254,17 +255,13 @@ export const CreateAlertColumns = (
         },
         {
             accessorKey: "site.name",
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant='ghost'
-                        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-                    >
-                        Site
-                        <ArrowUpDown />
-                    </Button>
-                );
-            },
+            header: ({ column }) => (
+                <ColumnHeaderFilter
+                    column={column}
+                    title="Site"
+                    filterOptions={filterOptions['site.name'] || []}
+                />
+            ),
             cell: ({ row }) => {
                 return row.original.site?.name || (
                     <Badge variant='secondary'>No site provided</Badge >
@@ -273,17 +270,13 @@ export const CreateAlertColumns = (
         },
         {
             accessorKey: "plant_type.name",
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant='ghost'
-                        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-                    >
-                        Equipment (Std)
-                        <ArrowUpDown />
-                    </Button>
-                );
-            },
+            header: ({ column }) => (
+                <ColumnHeaderFilter
+                    column={column}
+                    title="Equipment"
+                    filterOptions={filterOptions['plant_type.name'] || []}
+                />
+            ),
             cell: ({ row }) => {
                 return row.original.plant_type?.name || (
                     <Badge variant='secondary'>No types provided</Badge >
@@ -292,17 +285,13 @@ export const CreateAlertColumns = (
         },
         {
             accessorKey: "plant_make.name",
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant='ghost'
-                        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-                    >
-                        Make (Std)
-                        <ArrowUpDown />
-                    </Button>
-                );
-            },
+            header: ({ column }) => (
+                <ColumnHeaderFilter
+                    column={column}
+                    title="Make"
+                    filterOptions={filterOptions['plant_make.name'] || []}
+                />
+            ),
             cell: ({ row }) => {
                 return row.original.plant_make?.name || (
                     <Badge variant='secondary'>No makes provided</Badge >
@@ -311,17 +300,13 @@ export const CreateAlertColumns = (
         },
         {
             accessorKey: "plant_model.name",
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant='ghost'
-                        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-                    >
-                        Model (Std)
-                        <ArrowUpDown />
-                    </Button>
-                );
-            },
+            header: ({ column }) => (
+                <ColumnHeaderFilter
+                    column={column}
+                    title="Model"
+                    filterOptions={filterOptions['plant_model.name'] || []}
+                />
+            ),
             cell: ({ row }) => {
                 return row.original.plant_model?.name || (
                     <Badge variant='secondary'>No models provided</Badge >
@@ -330,7 +315,14 @@ export const CreateAlertColumns = (
         },
         {
             accessorKey: "hazards",
-            header: "Hazards",
+            header: ({ column }) => (
+                <ColumnHeaderFilter
+                    column={column}
+                    title="Hazards"
+                    filterOptions={filterOptions['hazards'] || []}
+                />
+            ),
+            filterFn: arrayIncludesFilter,
             cell: ({ row }) => {
                 const hazards = row.original.hazards || [];
                 return (
@@ -352,7 +344,14 @@ export const CreateAlertColumns = (
         },
         {
             accessorKey: "status",
-            header: "Status",
+            header: ({ column }) => (
+                <ColumnHeaderFilter
+                    column={column}
+                    title="Status"
+                    filterOptions={filterOptions['status'] || []}
+                />
+            ),
+            filterFn: statusFilter,
             cell: ({ row }) => {
                 const alert = row.original;
                 const hasMissingData = !alert.regulations?.length || !alert.hazards?.length;

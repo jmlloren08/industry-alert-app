@@ -61,7 +61,30 @@ export default function BulkEdit({
         }))
     });
 
-    // Initialize available plant makes and models for each alerts
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        // Show a loading alert while processing
+        Swal.fire({
+            title: 'Processing...',
+            html: 'Please wait while we process your request',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        // Post the form data
+        post(route('alerts.bulk-update'));
+    }
+
+    const updateAlert = (index: number, field: string, value: any) => {
+        setData('alerts', data.alerts.map((alert, i) =>
+            i === index ? { ...alert, [field]: value } : alert
+        ));
+    }
+
+    // Initialize available plant makes and models for each alert
     useEffect(() => {
         const makesByAlert: { [key: number]: PlantMake[] } = {};
         const modelsByAlert: { [key: number]: PlantModel[] } = {};
@@ -74,10 +97,75 @@ export default function BulkEdit({
                 modelsByAlert[index] = plantModels.filter((model) => model.make_id === alert.make_id);
             }
         });
+
         setAvailablePlantMakes(makesByAlert);
         setAvailablePlantModels(modelsByAlert);
         setLoading(false);
-    }, [data.alerts, plantMakes, plantModels]);
+    }, [plantMakes, plantModels]);
+
+    // Handle type changes for each alert - similar to create.tsx pattern
+    useEffect(() => {
+        const makesByAlert: { [key: number]: PlantMake[] } = {};
+        const modelsByAlert: { [key: number]: PlantModel[] } = {};
+
+        data.alerts.forEach((alert, index) => {
+            if (alert.type_id) {
+                const filteredMakes = plantMakes.filter((make) => make.type_id === alert.type_id);
+                makesByAlert[index] = filteredMakes;
+
+                // Clear make_id and model_id if they don't belong to the new type
+                const validMake = filteredMakes.find(make => make.id === alert.make_id);
+                if (!validMake) {
+                    // Update the alert data to clear make_id and model_id
+                    setData('alerts', data.alerts.map((a, i) =>
+                        i === index ? { ...a, make_id: '', model_id: '' } : a
+                    ));
+                }
+            } else {
+                makesByAlert[index] = [];
+                modelsByAlert[index] = [];
+            }
+        });
+
+        setAvailablePlantMakes(makesByAlert);
+        setAvailablePlantModels(prev => ({ ...prev, ...modelsByAlert }));
+    }, [data.alerts.map(alert => alert.type_id).join(',')]);
+
+    // Handle make changes for each alert - similar to create.tsx pattern
+    useEffect(() => {
+        const modelsByAlert: { [key: number]: PlantModel[] } = {};
+
+        data.alerts.forEach((alert, index) => {
+            if (alert.make_id) {
+                const filteredModels = plantModels.filter((model) => model.make_id === alert.make_id);
+                modelsByAlert[index] = filteredModels;
+
+                // Clear model_id if it doesn't belong to the new make
+                const validModel = filteredModels.find(model => model.id === alert.model_id);
+                if (!validModel) {
+                    // Update the alert data to clear model_id
+                    setData('alerts', data.alerts.map((a, i) =>
+                        i === index ? { ...a, model_id: '' } : a
+                    ));
+                }
+            } else {
+                modelsByAlert[index] = [];
+            }
+        });
+
+        setAvailablePlantModels(prev => ({ ...prev, ...modelsByAlert }));
+    }, [data.alerts.map(alert => alert.make_id).join(',')]);
+
+    const selectStyles = {
+        control: (base: any, state: any) => ({
+            ...base,
+            borderColor: state.isFocused ? '#3b82f6' : '#d1d5db',
+            boxShadow: state.isFocused ? '0 0 0 1px #3b82f6' : 'none',
+            '&:hover': {
+                borderColor: '3b82f6',
+            },
+        }),
+    };
 
     const sourceOptions = sources.map((source) => ({
         value: source.id,
@@ -110,111 +198,9 @@ export default function BulkEdit({
         label: hazard.name,
     })) || [];
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // Show a loading alert while processing
-        Swal.fire({
-            title: 'Processing...',
-            html: 'Please wait while we process your request',
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            showConfirmButton: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-        // Post the form data
-        post(route('alerts.bulk-update'));
+    if (loading) {
+        return <div>Loading...</div>;
     }
-
-    const updateAlert = (index: number, field: string, value: any) => {
-        const updatedAlerts = [...data.alerts];
-        updatedAlerts[index] = { ...updatedAlerts[index], [field]: value };
-        setData('alerts', updatedAlerts);
-    }
-
-    // Handle plant type change
-    const handlePlantTypeChange = (index: number, typeId: string) => {
-
-        if (!typeId) {
-            setAvailablePlantMakes((prev) => ({
-                ...prev,
-                [index]: [],
-            }));
-
-            setAvailablePlantModels((prev) => ({
-                ...prev,
-                [index]: [],
-            }));
-
-            updateAlert(index, 'type_id', '');
-            updateAlert(index, 'make_id', '');
-            updateAlert(index, 'model_id', '');
-            return;
-        }
-        const filteredMakes = plantMakes.filter((make) => make.type_id === typeId);
-
-        setAvailablePlantMakes((prev) => ({
-            ...prev,
-            [index]: filteredMakes,
-        }));
-
-        setAvailablePlantModels((prev) => ({
-            ...prev,
-            [index]: [],
-        }));
-
-        updateAlert(index, 'type_id', typeId);
-        updateAlert(index, 'make_id', '');
-        updateAlert(index, 'model_id', '');
-    }
-
-    // Handle plant make change
-    const handlePlantMakeChange = (index: number, makeId: string) => {
-        if(!makeId){
-            setAvailablePlantModels((prev) => ({
-                ...prev,
-                [index]: [],
-            }));
-            updateAlert(index, 'make_id', '');
-            updateAlert(index, 'model_id', '');
-            return;
-        }
-        const filteredModels = plantModels.filter((model) => model.make_id === makeId);
-
-        setAvailablePlantModels((prev) => ({
-            ...prev,
-            [index]: filteredModels,
-        }));
-
-        updateAlert(index, 'make_id', makeId);
-        updateAlert(index, 'model_id', '');
-    }
-
-    const selectStyles = {
-        control: (base: any, state: any) => ({
-            ...base,
-            borderColor: state.isFocused ? '#3b82f6' : '#d1d5db',
-            boxShadow: state.isFocused ? '0 0 0 1px #3b82f6' : 'none',
-            '&:hover': {
-                borderColor: '3b82f6',
-            },
-        }),
-    };
-
-    const errorSelectStyles = {
-        ...selectStyles,
-        control: (base: any, state: any) => ({
-            ...base,
-            borderColor: '#ef4444',
-            boxShadow: state.isFocused ? '0 0 0 1px #ef4444' : 'none',
-            '&:hover': {
-                borderColor: '#ef4444',
-            },
-        }),
-    };
-
-
 
     return (
         <>
@@ -252,7 +238,7 @@ export default function BulkEdit({
                     </header>
 
                     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between sticky top-0 z-50 bg-white border-b border-gray-200 p-4 -mx-4 shadow-sm">
                             <h1 className="text-2xl font-bold">Bulk Edit Alerts</h1>
                             <div className="flex gap-2">
                                 <Link href={route('alerts.index')}>
@@ -269,11 +255,6 @@ export default function BulkEdit({
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {data.alerts.map((alert, index) => {
-
-                            if (loading) {
-                                return <div key={alert.id}>Loading...</div>;
-                            }
-
                             const plantMakeOptions = (availablePlantMakes[index] || []).map((plantMake) => ({
                                 value: plantMake.id,
                                 label: plantMake.name,
@@ -297,7 +278,7 @@ export default function BulkEdit({
                                                 <Label htmlFor={`number-${index}`}>Alert Number</Label>
                                                 <Input
                                                     id={`number-${index}`}
-                                                    value={alert.number}
+                                                    value={data.alerts[index].number}
                                                     onChange={(e) => updateAlert(index, 'number', e.target.value)}
                                                     required
                                                 />
@@ -307,7 +288,7 @@ export default function BulkEdit({
                                                 <Label>Source</Label>
                                                 <Select
                                                     options={sourceOptions}
-                                                    value={sourceOptions.find((option) => option.value === alert.source_id) || null}
+                                                    value={sourceOptions.find((option) => option.value === data.alerts[index].source_id) || null}
                                                     onChange={(selectedOption) => updateAlert(index, 'source_id', selectedOption?.value || '')}
                                                     placeholder="Select a source..."
                                                     isClearable
@@ -321,7 +302,7 @@ export default function BulkEdit({
                                                 <Input
                                                     type="date"
                                                     id={`incident_date-${index}`}
-                                                    value={alert.incident_date}
+                                                    value={data.alerts[index].incident_date}
                                                     onChange={(e) => updateAlert(index, 'incident_date', e.target.value)}
                                                     required
                                                 />
@@ -331,7 +312,7 @@ export default function BulkEdit({
                                                 <Label htmlFor={`description-${index}`}>Description</Label>
                                                 <Textarea
                                                     id={`description-${index}`}
-                                                    value={alert.description}
+                                                    value={data.alerts[index].description}
                                                     onChange={(e) => updateAlert(index, 'description', e.target.value)}
                                                     required
                                                 />
@@ -342,7 +323,7 @@ export default function BulkEdit({
                                                 <Input
                                                     type="url"
                                                     id={`hyperlink_url-${index}`}
-                                                    value={alert.hyperlink_url}
+                                                    value={data.alerts[index].hyperlink_url}
                                                     onChange={(e) => updateAlert(index, 'hyperlink_url', e.target.value)}
                                                 />
                                             </div>
@@ -352,7 +333,7 @@ export default function BulkEdit({
                                                 <Select
                                                     isMulti
                                                     options={regulationOptions}
-                                                    value={regulationOptions.filter((option) => alert.regulation_ids.includes(option.value))}
+                                                    value={regulationOptions.filter((option) => data.alerts[index].regulation_ids.includes(option.value))}
                                                     onChange={(selectedOptions) => {
                                                         const values = selectedOptions?.map((option) => option.value) || [];
                                                         updateAlert(index, 'regulation_ids', values);
@@ -368,7 +349,7 @@ export default function BulkEdit({
                                                 <Label>Organization</Label>
                                                 <Select
                                                     options={organizationOptions}
-                                                    value={organizationOptions.find((option) => option.value === alert.organization_id) || null}
+                                                    value={organizationOptions.find((option) => option.value === data.alerts[index].organization_id) || null}
                                                     onChange={(selectedOption) => updateAlert(index, 'organization_id', selectedOption?.value || '')}
                                                     placeholder="Select an organization..."
                                                     isClearable
@@ -381,7 +362,7 @@ export default function BulkEdit({
                                                 <Label>Site</Label>
                                                 <Select
                                                     options={siteOptions}
-                                                    value={siteOptions.find((option) => option.value === alert.site_id) || null}
+                                                    value={siteOptions.find((option) => option.value === data.alerts[index].site_id) || null}
                                                     onChange={(selectedOption) => updateAlert(index, 'site_id', selectedOption?.value || '')}
                                                     placeholder="Select a site..."
                                                     isClearable
@@ -394,8 +375,8 @@ export default function BulkEdit({
                                                 <Label>Equipment (Std)</Label>
                                                 <Select
                                                     options={plantTypeOptions}
-                                                    value={plantTypeOptions.find((option) => option.value === alert.type_id) || null}
-                                                    onChange={(selectedOption) => handlePlantTypeChange(index, selectedOption?.value || '')}
+                                                    value={plantTypeOptions.find((option) => option.value === data.alerts[index].type_id) || null}
+                                                    onChange={(selectedOption) => updateAlert(index, 'type_id', selectedOption?.value || '')}
                                                     placeholder="Select a plant type..."
                                                     isClearable
                                                     isSearchable
@@ -415,8 +396,8 @@ export default function BulkEdit({
                                                 <Label>Make (Std)</Label>
                                                 <Select
                                                     options={plantMakeOptions}
-                                                    value={plantMakeOptions.find((option) => option.value === alert.make_id) || null}
-                                                    onChange={(selectedOption) => handlePlantMakeChange(index, selectedOption?.value || '')}
+                                                    value={plantMakeOptions.find((option) => option.value === data.alerts[index].make_id) || null}
+                                                    onChange={(selectedOption) => updateAlert(index, 'make_id', selectedOption?.value || '')}
                                                     placeholder="Select a plant make..."
                                                     isClearable
                                                     isSearchable
@@ -436,7 +417,7 @@ export default function BulkEdit({
                                                 <Label>Model (Std)</Label>
                                                 <Select
                                                     options={plantModelOptions}
-                                                    value={plantModelOptions.find((option) => option.value === alert.model_id) || null}
+                                                    value={plantModelOptions.find((option) => option.value === data.alerts[index].model_id) || null}
                                                     onChange={(selectedOption) => updateAlert(index, 'model_id', selectedOption?.value || '')}
                                                     placeholder="Select a plant model..."
                                                     isClearable
@@ -458,7 +439,7 @@ export default function BulkEdit({
                                                 <Select
                                                     isMulti
                                                     options={hazardOptions}
-                                                    value={hazardOptions.filter((option) => alert.hazard_ids?.includes(option.value))}
+                                                    value={hazardOptions.filter((option) => data.alerts[index].hazard_ids?.includes(option.value))}
                                                     onChange={(selectedOptions) => {
                                                         const values = selectedOptions?.map((option) => option.value) || [];
                                                         updateAlert(index, 'hazard_ids', values);

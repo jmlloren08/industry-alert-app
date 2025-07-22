@@ -330,7 +330,7 @@ class AlertController extends Controller
         }
     }
 
-    public function builkDelete(Request $request)
+    public function bulkDelete(Request $request)
     {
         try {
             $ids = $request->input('ids', []);
@@ -397,6 +397,25 @@ class AlertController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error marking alert as reviewed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function markAsNew(Alert $alert)
+    {
+        try {
+            $alert->markAsNew();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Alert marked as new successfully.',
+                'alert' => $alert
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error marking alert as new: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error marking alert as new: ' . $e->getMessage()
             ], 500);
         }
     }

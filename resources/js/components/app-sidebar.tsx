@@ -1,8 +1,10 @@
 import * as React from "react"
 import {
+    Building,
+    ChartNoAxesGantt,
     LayoutDashboard,
     ShieldAlert,
-    SquareTerminal,
+    Tractor,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -32,40 +34,48 @@ const data = {
         {
             title: "Manage",
             url: "#",
-            icon: SquareTerminal,
+            icon: ChartNoAxesGantt,
             isActive: true,
             items: [
                 {
                     title: "Sources",
                     url: route('sources.index'),
+                    icon: Building,
                 },
                 {
                     title: "Regulations",
                     url: route('regulations.index'),
+                    icon: Building
                 },
                 {
                     title: "Organizations",
                     url: route('organizations.index'),
+                    icon: Building
                 },
                 {
                     title: "Sites",
                     url: route('sites.index'),
+                    icon: Building
                 },
                 {
                     title: "Types",
                     url: route('plant-types.index'),
+                    icon: Tractor
                 },
                 {
                     title: "Makes",
                     url: route('plant-makes.index'),
+                    icon: Tractor,
                 },
                 {
                     title: "Models",
                     url: route('plant-models.index'),
+                    icon: Tractor,
                 },
                 {
                     title: "Hazards",
                     url: route('hazards.index'),
+                    icon: Tractor,
                 },
             ],
         },

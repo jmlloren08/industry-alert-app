@@ -24,7 +24,6 @@ import { RecentAlerts } from "@/components/dashboard/recent-alerts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PieChartComponent } from "@/components/dashboard/pie-chart"
 import { BarChartComponent } from "@/components/dashboard/bar-chart"
-import { count } from "console"
 
 export default function Dashboard() {
 
@@ -259,119 +258,112 @@ export default function Dashboard() {
               </Breadcrumb>
             </div>
           </header>
-
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            {/* KPI Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
-              {kpiConfigs.map((config, index) => (
-                <KPIBlock
-                  key={config.key}
-                  title={config.title}
-                  value={loading ? 0 : (metrics as any)?.[config.key] || 0}
-                  trend={loading ? { percentage: 0, direction: 'stable', text: '' } : (metrics as any)?.trends?.[config.trend] || { percentage: 0, direction: 'stable', text: 'No data' }}
-                  subtitle={config.subtitle}
-                  loading={loading}
-                />
-              ))}
-            </div>
-
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Left Column - Charts */}
-              <div className="lg:col-span-3 space-y-6">
-                {/* Alerts Over Time */}
+            {loading ? (
+              <div className="text-center items-center justify-center flex flex-col h-full">
+                <div
+                  className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-yellow-500 mx-auto"
+                ></div>
+                <h2 className="text-zinc-900 dark:text-white mt-4">Loading...</h2>
+                <p className="text-zinc-600 dark:text-zinc-400">
+                  Please wait while we fetch the latest data for you.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
+                  {kpiConfigs.map((config, index) => (
+                    <KPIBlock
+                      key={config.key}
+                      title={config.title}
+                      value={(metrics as any)?.[config.key] || 0}
+                      trend={(metrics as any)?.trends?.[config.trend] || { percentage: 0, direction: 'stable', text: 'No data' }}
+                      subtitle={config.subtitle}
+                    />
+                  ))}
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                  <div className="lg:col-span-3 space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Alerts Over Time</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <AreaChartComponent data={chartData} />
+                      </CardContent>
+                    </Card>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Alerts by Source</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <BarChartComponent data={alertsBySource} />
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Alerts by Organization</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <BarChartComponent data={alertsByOrganization} />
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Alerts by Site</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <BarChartComponent data={alertsBySite} />
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Equipment Analysis</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <BarChartComponent data={alertsByPlantType} />
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Alerts by Regulation</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <PieChartComponent data={alertsByRegulation} />
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Alerts by Hazard</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <PieChartComponent data={alertsByHazard} />
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                  <div className="lg:col-span-1">
+                    <Card className="sticky top-4">
+                      <CardHeader>
+                        <CardTitle>Filters & Controls</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <FiltersSidebar onFiltersChange={handleFiltersChange} />
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
                 <Card>
                   <CardHeader>
-                    <CardTitle>Alerts Over Time</CardTitle>
+                    <CardTitle>Recent Alerts</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <AreaChartComponent data={chartData} loading={loading} />
+                    <RecentAlerts alerts={recentAlerts} />
                   </CardContent>
                 </Card>
-
-                {/* Chart Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Alerts by Source</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <BarChartComponent data={alertsBySource} loading={loading} />
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Alerts by Organization</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <BarChartComponent data={alertsByOrganization} loading={loading} />
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Alerts by Site</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <BarChartComponent data={alertsBySite} loading={loading} />
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Equipment Analysis</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <BarChartComponent data={alertsByPlantType} loading={loading} />
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Alerts by Regulation</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <PieChartComponent data={alertsByRegulation} loading={loading} />
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Alerts by Hazard</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <PieChartComponent data={alertsByHazard} loading={loading} />
-                    </CardContent>
-                  </Card>
-                </div>
-
-
-              </div>
-
-              {/* Right Column - Filters */}
-              <div className="lg:col-span-1">
-                <Card className="sticky top-4">
-                  <CardHeader>
-                    <CardTitle>Filters & Controls</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <FiltersSidebar onFiltersChange={handleFiltersChange} />
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-
-            {/* Recent Alerts Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Alerts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <RecentAlerts alerts={recentAlerts} loading={loading} />
-              </CardContent>
-            </Card>
-
+              </>
+            )}
           </div>
         </SidebarInset>
       </SidebarProvider >

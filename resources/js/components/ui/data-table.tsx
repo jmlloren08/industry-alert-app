@@ -127,6 +127,7 @@ export function DataTable<TData, TValue>({
                     className="max-w-xs"
                 />
             </div>
+
             {/* Table */}
             <div className="overflow-x-auto max-h-[calc(100vh-300px)] overflow-y-auto">
                 <Table>
@@ -140,7 +141,7 @@ export function DataTable<TData, TValue>({
                                             className={cn(
                                                 "bg-white",
                                                 idx < 3 && "sticky left-0 z-50",
-                                                idx === 1  && "left-[24px]",
+                                                idx === 1 && "left-[24px]",
                                                 idx === 2 && "left-[70px]",
                                             )}
                                         >

@@ -89,17 +89,6 @@ export function NavUser({ user }: { user: User }) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Link href={route('profile.edit')} as="button" prefetch onClick={cleanup}>
-                  <div className="flex items-center gap-2">
-                    <Settings />
-                    Settings
-                  </div>
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
             <DropdownMenuItem>
               <Link method="post" href={route('logout')} as="button" onClick={handleLogout}>
                 <div className="flex items-center gap-2">

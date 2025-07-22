@@ -47,17 +47,12 @@ class AuthController extends Controller
                     'name' => $microsoftUser->getName(),
                     'email_verified_at' => now(),
                     'password' => null,
-                    'requires_sso_password_setup' => true,
                 ],
             );
 
-            session((['pending_sso_user_id' => $user->id]));
+            Auth::login($user);
 
-            if ($user->requires_sso_password_setup || !$user->sso_password) {
-                return redirect()->route('sso.password.setup');
-            }
-
-            return redirect()->route('sso.password.verify');
+            return redirect()->intended(route('dashboard'));
         } catch (\Exception $e) {
             Log::error('Microsoft callback error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
@@ -66,96 +61,96 @@ class AuthController extends Controller
         }
     }
 
-    public function showPasswordSetup()
-    {
-        $userId = session('pending_sso_user_id');
+    // public function showPasswordSetup()
+    // {
+    //     $userId = session('pending_sso_user_id');
 
-        if (!$userId) {
-            return redirect()->route('login')->withErrors(['error' => 'No pending user session found.']);
-        }
+    //     if (!$userId) {
+    //         return redirect()->route('login')->withErrors(['error' => 'No pending user session found.']);
+    //     }
 
-        $user = User::find($userId);
+    //     $user = User::find($userId);
 
-        if (!$user) {
-            return redirect()->route('login')->withErrors(['error' => 'User not found.']);
-        }
+    //     if (!$user) {
+    //         return redirect()->route('login')->withErrors(['error' => 'User not found.']);
+    //     }
 
-        return Inertia::render('auth/setup-password', [
-            'user' => $user->only(['name', 'email']),
-        ]);
-    }
+    //     return Inertia::render('auth/setup-password', [
+    //         'user' => $user->only(['name', 'email']),
+    //     ]);
+    // }
 
-    public function setupPassword(Request $request)
-    {
-        $request->validate([
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+    // public function setupPassword(Request $request)
+    // {
+    //     $request->validate([
+    //         'password' => ['required', 'confirmed', Rules\Password::defaults()],
+    //     ]);
 
-        $userId = session('pending_sso_user_id');
+    //     $userId = session('pending_sso_user_id');
 
-        if (!$userId) {
-            return redirect()->route('login')->withErrors(['error' => 'No pending user session found.']);
-        }
+    //     if (!$userId) {
+    //         return redirect()->route('login')->withErrors(['error' => 'No pending user session found.']);
+    //     }
 
-        $user = User::find($userId);
+    //     $user = User::find($userId);
 
-        if (!$user) {
-            return redirect()->route('login')->withErrors(['error' => 'User not found.']);
-        }
+    //     if (!$user) {
+    //         return redirect()->route('login')->withErrors(['error' => 'User not found.']);
+    //     }
 
-        $user->update([
-            'sso_password' => Hash::make($request->password),
-            'requires_sso_password_setup' => false,
-        ]);
+    //     $user->update([
+    //         'sso_password' => Hash::make($request->password),
+    //         'requires_sso_password_setup' => false,
+    //     ]);
 
-        Auth::login($user);
-        session()->forget('pending_sso_user_id');
+    //     Auth::login($user);
+    //     session()->forget('pending_sso_user_id');
 
-        return redirect()->intended(route('dashboard'));
-    }
+    //     return redirect()->intended(route('dashboard'));
+    // }
 
-    public function showPasswordVerify()
-    {
-        $userId = session('pending_sso_user_id');
+    // public function showPasswordVerify()
+    // {
+    //     $userId = session('pending_sso_user_id');
 
-        if (!$userId) {
-            return redirect()->route('login')->withErrors(['error' => 'No pending user session found.']);
-        }
+    //     if (!$userId) {
+    //         return redirect()->route('login')->withErrors(['error' => 'No pending user session found.']);
+    //     }
 
-        $user = User::find($userId);
+    //     $user = User::find($userId);
 
-        if (!$user) {
-            return redirect()->route('login')->withErrors(['error' => 'User not found.']);
-        }
+    //     if (!$user) {
+    //         return redirect()->route('login')->withErrors(['error' => 'User not found.']);
+    //     }
 
-        return Inertia::render('auth/verify-password', [
-            'user' => $user->only(['name', 'email']),
-        ]);
-    }
+    //     return Inertia::render('auth/verify-password', [
+    //         'user' => $user->only(['name', 'email']),
+    //     ]);
+    // }
 
-    public function verifyPassword(Request $request)
-    {
-        $request->validate([
-            'password' => 'required|string|min:8',
-        ]);
+    // public function verifyPassword(Request $request)
+    // {
+    //     $request->validate([
+    //         'password' => 'required|string|min:8',
+    //     ]);
 
-        $userId = session('pending_sso_user_id');
+    //     $userId = session('pending_sso_user_id');
 
-        if (!$userId) {
-            return redirect()->route('login')->withErrors(['error' => 'No pending user session found.']);
-        }
+    //     if (!$userId) {
+    //         return redirect()->route('login')->withErrors(['error' => 'No pending user session found.']);
+    //     }
 
-        $user = User::find($userId);
+    //     $user = User::find($userId);
 
-        if (!$user || !Hash::check($request->password, $user->sso_password)) {
-            return back()->withErrors([
-                'password' => 'The provided password is incorrect. Please try again.',
-            ]);
-        }
+    //     if (!$user || !Hash::check($request->password, $user->sso_password)) {
+    //         return back()->withErrors([
+    //             'password' => 'The provided password is incorrect. Please try again.',
+    //         ]);
+    //     }
 
-        Auth::login($user);
-        session()->forget('pending_sso_user_id');
+    //     Auth::login($user);
+    //     session()->forget('pending_sso_user_id');
 
-        return redirect()->intended(route('dashboard'));
-    }
+    //     return redirect()->intended(route('dashboard'));
+    // }
 }

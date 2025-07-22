@@ -13,7 +13,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Head, router, usePage } from "@inertiajs/react"
+import { Head, router } from "@inertiajs/react"
 import { Source, Organization, Site, PlantType, PlantMake, PlantModel } from "../../components/ui/column"
 import { DataTable } from "../../components/ui/data-table"
 import CreateAlertDialog from "./create"
@@ -21,10 +21,8 @@ import { Button } from "@/components/ui/button"
 import useFlashMessages from "@/hooks/use-flash-messages"
 import { Alert, CreateAlertColumns, Hazard, Regulation } from "@/components/ui/column-alerts"
 import { AlertTriangle, BellPlus, CheckCircle, Edit, Plus, Trash2 } from "lucide-react"
-import React, { useEffect } from "react"
-import BulkEditAlertsDialog from "./bulk-edit"
+import React from "react"
 import BulkDeleteAlertsDialog from "./bulk-delete"
-import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 
@@ -76,18 +74,6 @@ export default function Index({
   const reviewedAlertsCount = filteredAlerts.filter((alert) => alert.is_reviewed).length;
   const incompleteDataCount = filteredAlerts.filter((alert) => !alert.regulations?.length || !alert.hazards?.length).length;
 
-  const alertColumns = CreateAlertColumns(
-    sources,
-    regulations,
-    organizations,
-    sites,
-    plantTypes,
-    plantMakes,
-    plantModels,
-    hazards,
-    true,
-  );
-
   const handleToggleNewOnly = (checked: boolean) => {
     setShowNewOnly(checked);
   }
@@ -110,38 +96,6 @@ export default function Index({
   const handleDeleteComplete = () => {
     setSelectedRows([]);
   }
-
-  const alertExportColumns = [
-    { header: "Number", accessor: "number" },
-    { header: "Source", accessor: "source.name" },
-    {
-      header: "Incident Date",
-      accessor: "incident_date",
-      cell: (value: string) => new Date(value).toLocaleDateString(),
-    },
-    { header: "Description", accessor: "description" },
-    { header: "Hyperlink", accessor: "hyperlink_url" },
-    {
-      header: "Regulation",
-      accessor: "regulations",
-      cell: (regulations: Regulation[]) => regulations?.map((regulation) => `${regulation.section} - ${regulation.description}`).join("; ") || "No regulations provided",
-    },
-    { header: "Organization", accessor: "organization.name" },
-    { header: "Site", accessor: "site.name" },
-    { header: "Plant Type", accessor: "plant_type.name" },
-    { header: "Plant Make", accessor: "plant_make.name" },
-    { header: "Plant Model", accessor: "plant_model.name" },
-    {
-      header: "Hazard",
-      accessor: "hazards",
-      cell: (hazards: Hazard[]) => hazards?.map((hazard) => `${hazard.name}`).join("; ") || "No hazards provided",
-    },
-    {
-      header: 'Review Status',
-      accessor: 'is_reviewed',
-      cell: (value: boolean) => value ? 'Reviewed' : 'Not Reviewed',
-    },
-  ];
 
   const customActions = (
     <div className="flex gap-2">
@@ -182,6 +136,87 @@ export default function Index({
       </CreateAlertDialog>
     </div >
   );
+
+  // Filter options
+  const filterOptions = React.useMemo(() => {
+    return {
+      'source.name': sources.map((source) => ({
+        label: source.name,
+        value: source.name,
+      })),
+      'regulations': regulations.map((regulation) => ({
+        label: regulation.section,
+        value: regulation.section,
+      })),
+      'organization.name': organizations.map((organization) => ({
+        label: organization.name,
+        value: organization.name,
+      })),
+      'site.name': sites.map((site) => ({
+        label: site.name,
+        value: site.name,
+      })),
+      'plant_type.name': plantTypes.map((type) => ({
+        label: type.name,
+        value: type.name,
+      })),
+      'plant_make.name': plantMakes.map((make) => ({
+        label: make.name,
+        value: make.name,
+      })),
+      'plant_model.name': plantModels.map((model) => ({
+        label: model.name,
+        value: model.name,
+      })),
+      'hazards': hazards.map((hazard) => ({
+        label: hazard.name,
+        value: hazard.name,
+      })),
+      'status': [
+        { label: 'New', value: 'new' },
+        { label: 'Reviewed (Complete)', value: 'reviewed' },
+        { label: 'Complete (Not Reviewed)', value: 'complete' },
+        { label: 'Incomplete', value: 'incomplete' },
+      ],
+    }
+  }, [sources, regulations, organizations, sites, plantTypes, plantMakes, plantModels, hazards]);
+
+  const alertColumns = CreateAlertColumns(
+    true,
+    filterOptions,
+  );
+
+  const alertExportColumns = [
+    { header: "Number", accessor: "number" },
+    { header: "Source", accessor: "source.name" },
+    {
+      header: "Incident Date",
+      accessor: "incident_date",
+      cell: (value: string) => new Date(value).toLocaleDateString(),
+    },
+    { header: "Description", accessor: "description" },
+    { header: "Hyperlink", accessor: "hyperlink_url" },
+    {
+      header: "Regulation",
+      accessor: "regulations",
+      cell: (regulations: Regulation[]) => regulations?.map((regulation) => `${regulation.section} - ${regulation.description}`).join("; ") || "No regulations provided",
+    },
+    { header: "Organization", accessor: "organization.name" },
+    { header: "Site", accessor: "site.name" },
+    { header: "Plant Type", accessor: "plant_type.name" },
+    { header: "Plant Make", accessor: "plant_make.name" },
+    { header: "Plant Model", accessor: "plant_model.name" },
+    {
+      header: "Hazard",
+      accessor: "hazards",
+      cell: (hazards: Hazard[]) => hazards?.map((hazard) => `${hazard.name}`).join("; ") || "No hazards provided",
+    },
+    {
+      header: 'Review Status',
+      accessor: 'is_reviewed',
+      cell: (value: boolean) => value ? 'Reviewed' : 'Not Reviewed',
+    },
+  ];
 
   return (
     <>

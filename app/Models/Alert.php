@@ -96,6 +96,16 @@ class Alert extends Model
         ]);
     }
 
+    public function markAsNew()
+    {
+        $this->update([
+            'is_new' => true,
+            'is_reviewed' => false,
+            'reviewed_by' => null,
+            'reviewed_at' => null,
+        ]);
+    }
+
     public function hasMissingRegulations()
     {
         return $this->regulations()->count() === 0;

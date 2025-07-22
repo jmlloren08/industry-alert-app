@@ -19,10 +19,6 @@ use App\Services\GraphMailService;
 
 Route::get('/auth/redirect', [AuthController::class, 'redirectToMicrosoft'])->name('microsoft.login');
 Route::get('/auth/callback', [AuthController::class, 'handleMicrosoftCallback'])->name('microsoft.callback');
-Route::get('/auth/sso/password/setup', [AuthController::class, 'showPasswordSetup'])->name('sso.password.setup');
-Route::post('/auth/sso/password/setup', [AuthController::class, 'setupPassword'])->name('sso.password.setup.post');
-Route::get('/auth/sso/password/verify', [AuthController::class, 'showPasswordVerify'])->name('sso.password.verify');
-Route::post('/auth/sso/password/verify', [AuthController::class, 'verifyPassword'])->name('sso.password.verify.post');
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -32,20 +28,6 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-
-    // Test email
-    Route::get('/send-graph-email', function (GraphMailService $mailer) {
-
-        $accessToken = config('services.microsoft.client_secret');
-        $fromEmail = 'support@raioneng.com.au';
-        $toEmail = 'jaymarvinc.lloren@gmail.com';
-        $subject = 'Test Email from Industry Alert App';
-        $bodyText = 'This is a test email sent using Microsoft Graph API.';
-
-        $mailer->sendMail($accessToken, $fromEmail, $toEmail, $subject, $bodyText);
-
-        return 'Email sent successfully!';
-    });
 
     Route::get('/auth/verified/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/auth/verified/dashboard/metrics', [DashboardController::class, 'getMetrics']);
@@ -70,6 +52,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/auth/verified/alerts/bulk-update', [AlertController::class, 'bulkUpdate'])->name('alerts.bulk-update');
     Route::delete('/auth/verified/alerts/bulk-delete', [AlertController::class, 'bulkDelete'])->name('alerts.bulk-delete');
     Route::patch('/auth/verified/alerts/{alert}/mark-reviewed', [AlertController::class, 'markAsReviewed'])->name('alerts.mark-reviewed');
+    Route::patch('/auth/verified/alerts/{alert}/mark-new', [AlertController::class, 'markAsNew'])->name('alerts.mark-new');
     Route::get('/auth/verified/alerts/review-metrics', [AlertController::class, 'getReviewMetrics'])->name('alerts.review-metrics');
     Route::resource('/auth/verified/alerts', AlertController::class);
 

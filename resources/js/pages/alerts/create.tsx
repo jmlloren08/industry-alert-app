@@ -46,7 +46,6 @@ export default function CreateAlertDialog({
     const [open, setOpen] = useState(false);
     const [availablePlantMakes, setAvailablePlantMakes] = useState<PlantMake[]>([]);
     const [availablePlantModels, setAvailablePlantModels] = useState<PlantModel[]>([]);
-    const [incidentDate, setIncidentDate] = useState<Date | null | undefined>(null);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         number: "",
@@ -145,7 +144,6 @@ export default function CreateAlertDialog({
         post(route('alerts.store'), {
             onSuccess: () => {
                 reset();
-                setIncidentDate(undefined);
                 setOpen(false);
                 setAvailablePlantMakes([]);
                 setAvailablePlantModels([]);
@@ -157,7 +155,6 @@ export default function CreateAlertDialog({
         setOpen(newOpen);
         if (!newOpen) {
             reset();
-            setIncidentDate(undefined);
         }
     }
 
