@@ -160,13 +160,13 @@ export default function Index({
         label: type.name,
         value: type.name,
       })),
-      'plant_make.name': plantMakes.map((make) => ({
-        label: make.name,
-        value: make.name,
+      'plant_make.name': [...new Set(plantMakes.map((make) => make.name))].map((name) => ({
+        label: name,
+        value: name,
       })),
-      'plant_model.name': plantModels.map((model) => ({
-        label: model.name,
-        value: model.name,
+      'plant_model.name': [...new Set(plantModels.map((model) => model.name))].map((name) => ({
+        label: name,
+        value: name,
       })),
       'hazards': hazards.map((hazard) => ({
         label: hazard.name,
